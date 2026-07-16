@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/booking.dart';
 import '../../services/booking_service.dart';
+import '../../services/chat_service.dart';
 import '../../services/driver_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/app_header.dart';
@@ -111,7 +112,17 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
     }
 
     if (!mounted) return;
-    final entries = byTripId.values.toList()..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+    List<String> hiddenIds = const [];
+    try {
+      hiddenIds = await ChatService.instance.getHiddenChatIds();
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error in lib/screens/chat/chat_inbox_screen.dart (hidden): $e');
+    }
+
+    if (!mounted) return;
+    final entries = byTripId.values.where((e) => !hiddenIds.contains(e.tripId)).toList()
+      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
     setState(() {
       _entries = entries;
       _loading = false;
@@ -161,7 +172,55 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                         separatorBuilder: (_, __) => const SizedBox(height: 10),
                         itemBuilder: (context, i) {
                           final e = _entries[i];
-                          return InkWell(
+                          return Dismissible(
+                            key: Key(e.tripId),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              decoration: BoxDecoration(
+                                color: AppColors.danger.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(Icons.delete_outline,
+                                  color: AppColors.danger, size: 24),
+                            ),
+                            confirmDismiss: (_) async {
+                              return await showDialog<bool>(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16)),
+                                  title: const Text('Delete chat?'),
+                                  content: const Text(
+                                      'This removes the chat from your list. The trip and your booking are not affected.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: const Text('Delete',
+                                          style: TextStyle(
+                                              color: AppColors.danger)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            onDismissed: (_) async {
+                              setState(() => _entries.removeAt(i));
+                              try {
+                                await ChatService.instance.hideChat(e.tripId);
+                              } catch (_) {
+                                // Re-add if it fails
+                                setState(() => _entries.insert(i, e));
+                              }
+                            },
+                            child: InkWell(
                             onTap: () => Navigator.of(context).push(
                               MaterialPageRoute(builder: (_) => ChatScreen(tripId: e.tripId)),
                             ),
@@ -252,7 +311,8 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                                 ],
                               ),
                             ),
-                          );
+                          ), // InkWell
+                          ); // Dismissible
                         },
                       ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'language_switcher.dart';
 import 'notification_bell.dart';
 import 'profile_icon_button.dart';
 
@@ -51,6 +52,7 @@ AppBar buildAppHeader(
   String title, {
   bool showProfileIcon = true,
   bool showNotificationBell = true,
+  bool showLanguageSwitcher = true,
   bool showBackButton = false,
   List<Widget>? extraActions,
   bool centerTitle = false,
@@ -67,6 +69,7 @@ AppBar buildAppHeader(
     leading: showBackButton ? const AppBackButton() : null,
     actions: [
       ...?extraActions,
+      if (showLanguageSwitcher) const LanguageToggleButton(),
       if (showNotificationBell) const NotificationBell(),
       if (showProfileIcon) const ProfileIconButton(),
     ],

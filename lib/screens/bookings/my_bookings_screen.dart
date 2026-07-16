@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/booking.dart';
 import '../../models/review.dart';
 import '../../services/auth_gate.dart';
@@ -11,11 +12,11 @@ import '../../widgets/app_header.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/profile_icon_button.dart';
 import '../../widgets/status_badge.dart';
+import '../trip/trip_detail_screen.dart';
 import '../payment/payment_screen.dart';
 import '../payment/pay_remaining_screen.dart';
 import '../trip/waiting_for_driver_screen.dart';
 import '../trip/chat_screen.dart';
-import '../trip/live_tracking_screen.dart';
 import '../trip/rate_trip_screen.dart';
 import 'cancel_withdraw_screen.dart';
 import 'rebook_screen.dart';
@@ -47,6 +48,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   /// permanently on the booking card itself, not only as a one-time
   /// popup that's easy to miss if you tap away from it.
   final Map<String, List<PendingReview>> _pendingByTrip = {};
+  final Set<String> _hiddenBookingIds = {};
 
   static const _upcomingStatuses = {
     BookingStatus.pendingDriverAcceptance,
@@ -109,7 +111,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       if (!mounted) return;
       setState(() {
         _loggedIn = true;
-        _error = "Couldn't load your bookings.";
+        _error = AppLocalizations.of(context).bookingsLoadError;
         _loading = false;
       });
     }
@@ -196,6 +198,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   void _showSummary(Booking booking) {
+    final l = AppLocalizations.of(context);
     final trip = booking.trip;
     final canChat = booking.status == BookingStatus.paid || booking.status == BookingStatus.completed;
     showModalBottomSheet(
@@ -213,7 +216,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  trip != null ? '${trip.originCity} → ${trip.destinationCity}' : 'Trip',
+                  trip != null ? '${trip.originCity} → ${trip.destinationCity}' : l.bookingsTripFallback,
                   style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                 ),
                 StatusBadge(status: booking.status),
@@ -249,7 +252,10 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               ),
             ],
             const SizedBox(height: 10),
-            Text('${booking.seats} seat${booking.seats > 1 ? 's' : ''}',
+            Text(
+                booking.seats > 1
+                    ? l.bookingsSeatPlural(booking.seats)
+                    : l.bookingsSeatSingular(booking.seats),
                 style: const TextStyle(color: AppColors.textSecondary)),
             if (canChat && trip != null) ...[
               const SizedBox(height: 18),
@@ -267,7 +273,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         );
                       },
                       icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                      label: const Text('Chat'),
+                      label: Text(l.bookingsChat),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -276,11 +282,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                       onPressed: () {
                         Navigator.of(context).pop();
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => LiveTrackingScreen(trip: trip)),
+                          MaterialPageRoute(builder: (_) => TripDetailScreen(tripId: trip.id)),
                         );
                       },
                       icon: const Icon(Icons.my_location, size: 18),
-                      label: const Text('Track'),
+                      label: Text(l.bookingsTrack),
                     ),
                   ),
                 ],
@@ -306,17 +312,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     if (_loading) {
       return Scaffold(
         backgroundColor: AppColors.background,
-        appBar: buildAppHeader('My Trips'),
+        appBar: buildAppHeader(l.bookingsTitle),
         body: const Center(child: CircularProgressIndicator(strokeWidth: 2.4)),
       );
     }
     if (!_loggedIn) {
       return Scaffold(
         backgroundColor: AppColors.background,
-        appBar: buildAppHeader('My Trips', showProfileIcon: false),
+        appBar: buildAppHeader(l.bookingsTitle, showProfileIcon: false),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(28),
@@ -325,17 +332,17 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
               children: [
                 const Icon(Icons.list_alt_outlined, size: 48, color: AppColors.textSecondary),
                 const SizedBox(height: 14),
-                const Text('Log in to see your bookings',
+                Text(l.bookingsLoginPrompt,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                 const SizedBox(height: 6),
-                const Text(
-                  'Your trip requests and booking history will show up here once you log in.',
+                Text(
+                  l.bookingsLoginHint,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                 ),
                 const SizedBox(height: 18),
-                PrimaryButton(label: 'Log in / Sign up', onPressed: _login),
+                PrimaryButton(label: l.bookingsLoginSignup, onPressed: _login),
               ],
             ),
           ),
@@ -347,12 +354,16 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: buildAppHeader(
-          'My Trips',
-          bottom: const TabBar(
+          l.bookingsTitle,
+          bottom: TabBar(
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
-            tabs: [Tab(text: 'All'), Tab(text: 'Upcoming'), Tab(text: 'Past')],
+            tabs: [
+              Tab(text: l.bookingsAll),
+              Tab(text: l.bookingsUpcoming),
+              Tab(text: l.bookingsPast),
+            ],
           ),
         ),
         body: TabBarView(
@@ -367,116 +378,144 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   }
 
   Widget _buildList(List<Booking> bookings) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
-    }
-    if (_error != null) {
-      return RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          children: [
-            const SizedBox(height: 80),
-            Center(child: Text(_error!, style: const TextStyle(color: AppColors.textSecondary))),
-          ],
-        ),
-      );
-    }
-    if (bookings.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          children: const [
-            SizedBox(height: 80),
-            Center(
-              child: Text('No bookings here yet.', style: TextStyle(color: AppColors.textSecondary)),
-            ),
-          ],
-        ),
-      );
-    }
+    final l = AppLocalizations.of(context);
+    final visible = bookings.where((b) => !_hiddenBookingIds.contains(b.id)).toList();
+
+    if (_loading) return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
+    if (_error != null) return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(children: [
+        const SizedBox(height: 80),
+        Center(child: Text(_error!, style: const TextStyle(color: AppColors.textSecondary))),
+      ]));
+    if (visible.isEmpty) return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(children: [
+        const SizedBox(height: 80),
+        Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.receipt_long_outlined, size: 52, color: AppColors.border),
+          const SizedBox(height: 12),
+          Text(l.bookingsEmpty,
+            style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+        ])),
+      ]));
+
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: bookings.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        itemCount: visible.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, i) {
-          final b = bookings[i];
+          final b = visible[i];
           final trip = b.trip;
           final pending = _pendingByTrip[b.tripId] ?? const [];
-          return InkWell(
-            onTap: () => _openBooking(b),
-            onLongPress: _canCancel(b) ? () => _cancelOrWithdraw(b) : null,
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(14),
+          final isPast = !_upcomingStatuses.contains(b.status) 
+          || b.status == BookingStatus.pendingPayment
+          || b.status == BookingStatus.cancelled;
+          
+          return Dismissible(
+            key: Key(b.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              margin: const EdgeInsets.symmetric(vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              trip != null ? '${trip.originCity} → ${trip.destinationCity}' : 'Trip',
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                            ),
-                            if (trip != null && trip.originLocation.isNotEmpty) ...[
-                              const SizedBox(height: 3),
-                              Row(
-                                children: [
-                                  const Icon(Icons.fiber_manual_record, size: 9, color: AppColors.primary),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      trip.originLocation,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                            if (trip != null && trip.destinationLocation.isNotEmpty) ...[
-                              const SizedBox(height: 3),
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on, size: 10, color: AppColors.gold),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      trip.destinationLocation,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                            const SizedBox(height: 4),
-                            if (trip != null)
-                              Text(
-                                '${_dateLabel(trip.departureTime)} · ${_timeLabel(trip.departureTime)}',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
-                              ),
-                            const SizedBox(height: 2),
-                            Text('${b.seats} seat${b.seats > 1 ? 's' : ''}',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
-                          ],
-                        ),
-                      ),
-                      StatusBadge(status: b.status),
+                color: AppColors.danger,
+                borderRadius: BorderRadius.circular(16)),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              child: const Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.delete_outline, color: Colors.white, size: 24),
+                SizedBox(height: 4),
+                Text('Remove', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+              ])),
+            confirmDismiss: (_) async {
+            if (isPast) {
+              return true; // remove immediately
+            }
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (_) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                title: const Text('Cancel booking?', style: TextStyle(fontWeight: FontWeight.w800)),
+                content: const Text('This will cancel your booking. This action cannot be undone.'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Keep', style: TextStyle(color: AppColors.textSecondary))),
+                  FilledButton(onPressed: () => Navigator.pop(context, true),
+                    style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+                    child: const Text('Cancel booking')),
+                ]));
+            if (confirm == true) {
+              try {
+                await BookingService.instance.cancel(b.id);
+                return true; // remove from UI
+              } catch (_) {
+                return false;
+              }
+            }
+            return false;
+          },
+            child: InkWell(
+              onTap: () => _openBooking(b),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(.04),
+                    blurRadius: 8, offset: const Offset(0, 2))]),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  // Header row: route + status badge
+                  Row(children: [
+                    Expanded(child: Text(
+                      trip != null ? '${trip.originCity} → ${trip.destinationCity}' : l.bookingsTripFallback,
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                      overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 8),
+                    StatusBadge(status: b.status),
+                  ]),
+                  // Pickup/dropoff
+                  if (trip != null && trip.originLocation.isNotEmpty) ...[
+                    const SizedBox(height: 5),
+                    Row(children: [
+                      const Icon(Icons.fiber_manual_record, size: 9, color: AppColors.primary),
+                      const SizedBox(width: 5),
+                      Expanded(child: Text(trip.originLocation, overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600))),
+                    ]),
+                  ],
+                  if (trip != null && trip.destinationLocation.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Row(children: [
+                      const Icon(Icons.location_on, size: 10, color: AppColors.gold),
+                      const SizedBox(width: 5),
+                      Expanded(child: Text(trip.destinationLocation, overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600))),
+                    ]),
+                  ],
+                  const SizedBox(height: 8),
+                  // Date + price row
+                  Row(children: [
+                    if (trip != null) ...[
+                      const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Text('${_dateLabel(trip.departureTime)} · ${_timeLabel(trip.departureTime)}',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      const SizedBox(width: 8),
                     ],
-                  ),
+                    const Icon(Icons.event_seat_outlined, size: 12, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(b.seats > 1 ? l.bookingsSeatPlural(b.seats) : l.bookingsSeatSingular(b.seats),
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    const Spacer(),
+                    // Price
+                    Text(_priceLabel(b.amountTotal),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.primary)),
+                  ]),
+                  // Rate badge
                   if (pending.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     const Divider(height: 1, color: AppColors.border),
@@ -486,25 +525,27 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                       borderRadius: BorderRadius.circular(10),
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(10)),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.star_outline, size: 16, color: AppColors.primary),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Rate ${pending.first.name}',
-                                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13),
-                              ),
-                            ),
-                            const Icon(Icons.chevron_right, size: 16, color: AppColors.primary),
-                          ],
-                        ),
-                      ),
+                        child: Row(children: [
+                          const Icon(Icons.star_outline, size: 15, color: AppColors.primary),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(l.bookingsRatePassenger(pending.first.name),
+                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12.5))),
+                          const Icon(Icons.chevron_right, size: 15, color: AppColors.primary),
+                        ])),
                     ),
                   ],
-                ],
+                  // Swipe hint for past bookings
+                  if (isPast) ...[
+                    const SizedBox(height: 8),
+                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                      const Icon(Icons.swipe_left_outlined, size: 12, color: AppColors.border),
+                      const SizedBox(width: 4),
+                      Text('Swipe to remove', style: TextStyle(fontSize: 10, color: AppColors.border)),
+                    ]),
+                  ],
+                ]),
               ),
             ),
           );
@@ -513,13 +554,32 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     );
   }
 
+  String _priceLabel(num v) {
+    final s = v.toStringAsFixed(0);
+    final buf = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buf.write('\u202f');
+      buf.write(s[i]);
+    }
+    return '$buf XAF';
+  }
+
   String _timeLabel(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
+  static const _monthsEn = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  static const _monthsFr = [
+    'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
+    'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'
+  ];
+
   String _dateLabel(DateTime t) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
+    final months = Localizations.localeOf(context).languageCode == 'fr'
+        ? _monthsFr
+        : _monthsEn;
     return '${t.day} ${months[t.month - 1]}';
   }
 }

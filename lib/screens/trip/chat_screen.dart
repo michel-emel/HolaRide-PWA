@@ -11,7 +11,6 @@ import '../../services/session_service.dart';
 import '../../services/trip_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/profile_icon_button.dart';
-import 'live_tracking_screen.dart';
 
 /// Screen 23 — Chat (unlocked after a booking is paid).
 ///
@@ -194,6 +193,70 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  bool get _isReadOnly => _trip != null && (_trip!.status == 'completed' || _trip!.status == 'cancelled');
+
+  Future<void> _deleteMessage(ChatMessage m) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete this message?'),
+        content: const Text('This only deletes it for everyone in this chat — it can\'t be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ChatService.instance.deleteMessage(widget.tripId, m.id);
+      await _load(silent: true);
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error in lib/screens/trip/chat_screen.dart: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not delete this message. Try again.')),
+      );
+    }
+  }
+
+  Future<void> _hideChat() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete this chat?'),
+        content: const Text(
+          'This removes it from your own list only — the other side keeps their conversation '
+          'as normal. If a new message comes in later, it\'ll reappear in your list.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ChatService.instance.hideChat(widget.tripId);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error in lib/screens/trip/chat_screen.dart: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not delete this chat. Try again.')),
+      );
+    }
+  }
+
   String _timeLabel(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
@@ -243,14 +306,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 ],
               ),
         actions: [
-          if (trip != null)
-            IconButton(
-              tooltip: 'Live tracking',
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => LiveTrackingScreen(trip: trip)),
-              ),
-              icon: const Icon(Icons.my_location, color: AppColors.primary),
-            ),
+          IconButton(
+            tooltip: 'Delete chat',
+            icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+            onPressed: _hideChat,
+          ),
           const ProfileIconButton(),
         ],
       ),
@@ -290,91 +350,124 @@ class _ChatScreenState extends State<ChatScreen> {
                           }
                           final mine = _myUserId != null && m.isMine(_myUserId!);
 
-                          if (_isLocationShare(m.text)) {
-                            final point = _parseLatLng(m.text);
+                          if (m.isDeleted) {
                             return Align(
                               alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
                               child: Container(
                                 margin: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                 constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
                                 decoration: BoxDecoration(
-                                  color: mine ? AppColors.primary : AppColors.surface,
+                                  color: AppColors.surfaceMuted,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: mine ? null : Border.all(color: AppColors.border),
                                 ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      if (!mine && m.senderName.isNotEmpty)
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.block, size: 14, color: AppColors.textSecondary),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      mine ? 'You deleted this message' : 'This message was deleted',
+                                      style: const TextStyle(
+                                          color: AppColors.textSecondary, fontStyle: FontStyle.italic, fontSize: 12.5),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          if (_isLocationShare(m.text)) {
+                            final point = _parseLatLng(m.text);
+                            return GestureDetector(
+                              onLongPress: mine ? () => _deleteMessage(m) : null,
+                              child: Align(
+                                alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(vertical: 4),
+                                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+                                  decoration: BoxDecoration(
+                                    color: mine ? AppColors.primary : AppColors.surface,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: mine ? null : Border.all(color: AppColors.border),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        if (!mine && m.senderName.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
+                                            child: Text(m.senderName,
+                                                style: const TextStyle(
+                                                    fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                                          ),
+                                        _LocationPreviewCard(point: point, onTap: () => _openLocation(m.text)),
                                         Padding(
-                                          padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
-                                          child: Text(m.senderName,
-                                              style: const TextStyle(
-                                                  fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                                        ),
-                                      _LocationPreviewCard(point: point, onTap: () => _openLocation(m.text)),
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
-                                        child: Text(
-                                          _timeLabel(m.createdAt),
-                                          style: TextStyle(
-                                            fontSize: 10.5,
-                                            color: mine ? AppColors.textOnDarkMuted : AppColors.textSecondary,
+                                          padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
+                                          child: Text(
+                                            _timeLabel(m.createdAt),
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              color: mine ? AppColors.textOnDarkMuted : AppColors.textSecondary,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             );
                           }
 
-                          return Align(
-                            alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
-                              decoration: BoxDecoration(
-                                color: mine ? AppColors.primary : AppColors.surface,
-                                borderRadius: BorderRadius.circular(16),
-                                border: mine ? null : Border.all(color: AppColors.border),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Sender name shown for anyone else's message —
-                                  // necessary since this is a group chat and "not
-                                  // mine" could be the driver or any of several
-                                  // different passengers.
-                                  if (!mine && m.senderName.isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 3),
-                                      child: Text(
-                                        m.senderName,
-                                        style: const TextStyle(
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.primary,
+                          return GestureDetector(
+                            onLongPress: mine ? () => _deleteMessage(m) : null,
+                            child: Align(
+                              alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+                                decoration: BoxDecoration(
+                                  color: mine ? AppColors.primary : AppColors.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: mine ? null : Border.all(color: AppColors.border),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Sender name shown for anyone else's message —
+                                    // necessary since this is a group chat and "not
+                                    // mine" could be the driver or any of several
+                                    // different passengers.
+                                    if (!mine && m.senderName.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 3),
+                                        child: Text(
+                                          m.senderName,
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.primary,
+                                          ),
                                         ),
                                       ),
+                                    Text(
+                                      m.text,
+                                      style: TextStyle(color: mine ? Colors.white : AppColors.textPrimary),
                                     ),
-                                  Text(
-                                    m.text,
-                                    style: TextStyle(color: mine ? Colors.white : AppColors.textPrimary),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    _timeLabel(m.createdAt),
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      color: mine ? AppColors.textOnDarkMuted : AppColors.textSecondary,
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      _timeLabel(m.createdAt),
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        color: mine ? AppColors.textOnDarkMuted : AppColors.textSecondary,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -383,37 +476,83 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           SafeArea(
             top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    tooltip: 'Share location',
-                    onPressed: _sharingLocation ? null : _shareLocation,
-                    icon: _sharingLocation
-                        ? const SizedBox(
-                            width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Icons.location_on_outlined, color: AppColors.primary),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
-                      decoration: const InputDecoration(hintText: 'Type a message...'),
+            child: _isReadOnly
+                ? Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _trip!.status == 'cancelled'
+                          ? AppColors.danger.withOpacity(0.08)
+                          : AppColors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: _trip!.status == 'cancelled'
+                            ? AppColors.danger.withOpacity(0.2)
+                            : AppColors.primary.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _trip!.status == 'cancelled'
+                              ? Icons.cancel_outlined
+                              : Icons.check_circle_outline,
+                          size: 16,
+                          color: _trip!.status == 'cancelled'
+                              ? AppColors.danger
+                              : AppColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            _trip!.status == 'cancelled'
+                                ? 'Trip cancelled — chat is now read-only.'
+                                : 'Trip completed — chat is now read-only.',
+                            style: TextStyle(
+                              color: _trip!.status == 'cancelled'
+                                  ? AppColors.danger
+                                  : AppColors.primary,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          tooltip: 'Share location',
+                          onPressed: _sharingLocation ? null : _shareLocation,
+                          icon: _sharingLocation
+                              ? const SizedBox(
+                                  width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.location_on_outlined, color: AppColors.primary),
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: _textController,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _send(),
+                            decoration: const InputDecoration(hintText: 'Type a message...'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        CircleAvatar(
+                          backgroundColor: AppColors.primary,
+                          child: IconButton(
+                            onPressed: _sending ? null : _send,
+                            icon: const Icon(Icons.send, color: Colors.white, size: 18),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  CircleAvatar(
-                    backgroundColor: AppColors.primary,
-                    child: IconButton(
-                      onPressed: _sending ? null : _send,
-                      icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),

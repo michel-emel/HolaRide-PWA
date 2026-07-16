@@ -5,9 +5,9 @@ import '../../services/api_client.dart';
 import '../../services/driver_service.dart';
 import '../../theme/app_colors.dart';
 import '../trip/chat_screen.dart';
-import '../trip/live_tracking_screen.dart';
 import '../trip/rate_trip_screen.dart';
 import '../../widgets/profile_icon_button.dart';
+import '../../widgets/status_badge.dart';
 
 /// Screen 21 — Incoming requests / trip management.
 class TripManagementScreen extends StatefulWidget {
@@ -241,13 +241,6 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
           elevation: 0,
           scrolledUnderElevation: 0,
           actions: [
-            IconButton(
-              tooltip: 'Live tracking',
-              icon: const Icon(Icons.my_location),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => LiveTrackingScreen(trip: trip)),
-              ),
-            ),
             const ProfileIconButton(),
           ],
           bottom: TabBar(
@@ -360,36 +353,10 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
       onRefresh: _load,
       child: ListView.separated(
         padding: const EdgeInsets.all(20),
-        itemCount: _confirmed.length + (_confirmed.isEmpty ? 2 : 1),
+        itemCount: _confirmed.length + (_confirmed.isEmpty ? 1 : 0),
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, i) {
-          if (i == 0) {
-            return InkWell(
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => LiveTrackingScreen(trip: widget.trip)),
-              ),
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(14)),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                      child: const Icon(Icons.my_location, color: Colors.white, size: 18),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text('Share My Location', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary)),
-                    ),
-                    const Icon(Icons.arrow_forward, size: 16, color: AppColors.primary),
-                  ],
-                ),
-              ),
-            );
-          }
+
           if (_confirmed.isEmpty) {
             return const Padding(
               padding: EdgeInsets.only(top: 20),
@@ -398,7 +365,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
               ),
             );
           }
-          final b = _confirmed[i - 1];
+          final b = _confirmed[i];
           return Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -450,7 +417,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
                     color: AppColors.successBg,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(b.status.label,
+                  child: Text(bookingStatusLabel(context, b.status),
                       style: const TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w700)),
                 ),
                 IconButton(

@@ -1,30 +1,19 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/auth_gate.dart';
 import '../services/session_service.dart';
+import '../theme/app_colors.dart';
 import 'home/home_screen.dart';
 import 'bookings/my_bookings_screen.dart';
 import 'chat/chat_inbox_screen.dart';
 import 'driver/my_trips_screen.dart';
 import 'profile/profile_screen.dart';
 import 'search/search_form_screen.dart';
+import 'dart:async';
+import '../models/booking.dart';
+import '../services/booking_service.dart';
+import 'trip/chat_screen.dart';
 
-/// Hosts the bottom-nav tabs.
-///
-/// The tab set is auth-aware — guests get a 3-tab bar (Home, Route,
-/// Login) since "My Trips"/"Chat"/"Profile" don't mean anything yet
-/// without an account. Logged-in users get the full 4-tab set (Home,
-/// My Trips, Chat, Profile). Tapping "Login" doesn't navigate anywhere
-/// — there's nothing to show on that tab — it just triggers the same
-/// login flow as everywhere else; once it succeeds, the bar swaps to
-/// the logged-in set automatically.
-///
-/// On top of that, logged-in users also have a "driver mode" — see
-/// `SessionService.isDriverMode`. It only changes which screen "My
-/// Trips" actually shows: your own published trips (driver mode) or
-/// your bookings (passenger mode, the default). Home, Chat, and
-/// Profile stay the same either way — Chat already combines both
-/// passenger and driver trips into one inbox, so it never needed to
-/// change, and a dedicated driver Home wasn't asked for.
 class MainTabScreen extends StatefulWidget {
   final int initialIndex;
   const MainTabScreen({super.key, this.initialIndex = 0});
@@ -38,17 +27,13 @@ class _MainTabScreenState extends State<MainTabScreen> {
   bool _loggedIn = false;
   bool _driverMode = false;
 
-  /// Bumped every time the "My Trips" tab is tapped — both
-  /// MyBookingsScreen and MyTripsScreen listen to this and reload
-  /// when it changes. Needed because the tab bodies live inside an
-  /// IndexedStack (kept alive for speed, not recreated on every tap),
-  /// so their own initState() only ever runs once. Without this,
-  /// something that changes the trip's state from elsewhere — most
-  /// importantly the driver marking a trip "Completed" while the
-  /// passenger already has My Trips open in the background — would
-  /// never be reflected until the whole app restarts, which is
-  /// exactly why the "Rate the driver" prompt could go missing.
   final ValueNotifier<int> _myTripsRefreshSignal = ValueNotifier<int>(0);
+
+  // Active trip chat FAB
+  String? _activeTripId;
+  String? _activeTripLabel;
+  int _unreadCount = 0;
+  Timer? _chatCheckTimer;
 
   @override
   void initState() {
@@ -56,6 +41,33 @@ class _MainTabScreenState extends State<MainTabScreen> {
     _checkState();
     SessionService.instance.authChanged.addListener(_onAuthChanged);
     SessionService.instance.driverModeChanged.addListener(_onDriverModeChanged);
+  }
+
+  Future<void> _startChatCheck() async {
+    _chatCheckTimer?.cancel();
+    _chatCheckTimer = Timer.periodic(const Duration(seconds: 15), (_) => _checkActiveTrip());
+    _checkActiveTrip();
+  }
+
+  Future<void> _checkActiveTrip() async {
+    if (!_loggedIn || !mounted) return;
+    try {
+      final bookings = await BookingService.instance.myBookings();
+      final active = bookings.where((b) => b.status == BookingStatus.paid).toList();
+      if (!mounted) return;
+      if (active.isEmpty) {
+        setState(() { _activeTripId = null; _activeTripLabel = null; _unreadCount = 0; });
+        return;
+      }
+      final b = active.first;
+      final trip = b.trip;
+      setState(() {
+        _activeTripId = b.tripId ?? b.id;
+        _activeTripLabel = trip != null
+          ? '${trip.originCity} → ${trip.destinationCity}'
+          : 'Active trip';
+      });
+    } catch (_) {}
   }
 
   Future<void> _checkState() async {
@@ -66,6 +78,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
       _loggedIn = loggedIn;
       _driverMode = driverMode;
     });
+    if (loggedIn) _startChatCheck();
   }
 
   void _onAuthChanged() async {
@@ -76,13 +89,10 @@ class _MainTabScreenState extends State<MainTabScreen> {
     setState(() {
       _loggedIn = loggedIn;
       _driverMode = driverMode;
-      // The guest and logged-in tab sets mean different things at the
-      // same index (guest index 1 is "Route", logged-in index 1 is
-      // "My Trips") — reset to Home whenever the set itself changes,
-      // rather than leave whatever was selected pointing at something
-      // unrelated.
       _index = 0;
     });
+    if (loggedIn) _startChatCheck();
+    else { _chatCheckTimer?.cancel(); setState(() { _activeTripId = null; _activeTripLabel = null; }); }
   }
 
   void _onDriverModeChanged() async {
@@ -97,14 +107,12 @@ class _MainTabScreenState extends State<MainTabScreen> {
     SessionService.instance.authChanged.removeListener(_onAuthChanged);
     SessionService.instance.driverModeChanged.removeListener(_onDriverModeChanged);
     _myTripsRefreshSignal.dispose();
+    _chatCheckTimer?.cancel();
     super.dispose();
   }
 
   List<Widget> get _tabs => !_loggedIn
-      ? const [
-          HomeScreen(),
-          SearchFormScreen(),
-        ]
+      ? const [HomeScreen(), SearchFormScreen()]
       : _driverMode
           ? [
               const HomeScreen(),
@@ -119,47 +127,90 @@ class _MainTabScreenState extends State<MainTabScreen> {
               const ProfileScreen(),
             ];
 
-  List<BottomNavigationBarItem> get _items => !_loggedIn
-      ? const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.route_outlined), activeIcon: Icon(Icons.route), label: 'Route'),
-          BottomNavigationBarItem(icon: Icon(Icons.login), label: 'Login'),
+  List<BottomNavigationBarItem> _buildItems(AppLocalizations l) => !_loggedIn
+      ? [
+          BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: l.tabHome),
+          BottomNavigationBarItem(icon: const Icon(Icons.route_outlined), activeIcon: const Icon(Icons.route), label: l.tabRoute),
+          BottomNavigationBarItem(icon: const Icon(Icons.login), label: l.tabLogin),
         ]
       : [
-          const BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: l.tabHome),
           BottomNavigationBarItem(
             icon: Icon(_driverMode ? Icons.directions_car_outlined : Icons.list_alt_outlined),
             activeIcon: Icon(_driverMode ? Icons.directions_car : Icons.list_alt),
-            label: 'My Trips',
+            label: l.tabMyTrips,
           ),
-          const BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
-          const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+          BottomNavigationBarItem(icon: const Icon(Icons.chat_bubble_outline), label: l.tabChat),
+          BottomNavigationBarItem(icon: const Icon(Icons.person_outline), label: l.tabProfile),
         ];
 
   void _onTap(int i) {
     if (!_loggedIn && i == 2) {
-      // "Login" — nothing to navigate to, just trigger the same gate
-      // used everywhere else. currentIndex deliberately doesn't change,
-      // so this tab never looks "selected."
       requireLogin(context);
       return;
     }
-    if (i == 1) {
-      _myTripsRefreshSignal.value++;
-    }
+    if (i == 1) _myTripsRefreshSignal.value++;
     setState(() => _index = i);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final tabs = _tabs;
     final safeIndex = _index < tabs.length ? _index : 0;
     return Scaffold(
+      backgroundColor: AppColors.background,
+      extendBody: true,
       body: IndexedStack(index: safeIndex, children: tabs),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: safeIndex,
-        onTap: _onTap,
-        items: _items,
+      floatingActionButton: _activeTripId != null ? Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton.extended(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => ChatScreen(tripId: _activeTripId!))),
+          backgroundColor: AppColors.primary,
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 22),
+              if (_unreadCount > 0)
+                Positioned(right: -4, top: -4,
+                  child: Container(
+                    width: 14, height: 14,
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                    child: Center(child: Text('$_unreadCount',
+                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800))))),
+            ]),
+          label: Text(_activeTripLabel ?? 'Trip chat',
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+        ),
+      ) : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(color: AppColors.textPrimary.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, 6)),
+              ],
+            ),
+            child: BottomNavigationBar(
+              currentIndex: safeIndex,
+              onTap: _onTap,
+              items: _buildItems(l),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: AppColors.textSecondary,
+              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
+              unselectedLabelStyle: const TextStyle(fontSize: 11),
+            ),
+          ),
+        ),
       ),
     );
   }

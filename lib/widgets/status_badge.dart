@@ -1,6 +1,32 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../models/booking.dart';
+
+/// Localized short label for a booking status, e.g. shown on
+/// [StatusBadge] and on the driver's trip management screen — one
+/// place controls the status -> text mapping.
+String bookingStatusLabel(BuildContext context, BookingStatus status) {
+  final l = AppLocalizations.of(context);
+  switch (status) {
+    case BookingStatus.pendingDriverAcceptance:
+      return l.bookingStatusWaiting;
+    case BookingStatus.pendingPayment:
+      return l.bookingStatusAwaitingPayment;
+    case BookingStatus.paid:
+      return l.bookingStatusPaid;
+    case BookingStatus.rejected:
+      return l.bookingStatusDeclined;
+    case BookingStatus.cancelled:
+      return l.bookingStatusCancelled;
+    case BookingStatus.completed:
+      return l.bookingStatusCompleted;
+    case BookingStatus.noShow:
+      return l.bookingStatusNoShow;
+    case BookingStatus.unknown:
+      return l.bookingStatusUnknown;
+  }
+}
 
 /// A small rounded pill showing a booking's status, colored by
 /// [BookingStatus.kind] so "Paid" is always green, "Declined" always
@@ -19,7 +45,7 @@ class StatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        status.label,
+        bookingStatusLabel(context, status),
         style: TextStyle(
           color: colors.fg,
           fontSize: 12,

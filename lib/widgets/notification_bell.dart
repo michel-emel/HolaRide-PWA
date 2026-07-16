@@ -4,16 +4,8 @@ import '../services/notification_service.dart';
 import '../services/session_service.dart';
 import '../theme/app_colors.dart';
 
-/// Cloche de notification réutilisable — affiche un badge rouge avec
-/// le nombre de notifications non lues, et ouvre [NotificationsScreen]
-/// au tap. Peut être placée dans n'importe quel AppBar/header.
-///
-/// Usage dans un AppBar :
-///   actions: [const NotificationBell(), const ProfileIconButton()]
-///
-/// Se charge automatiquement au montage et se rafraîchit quand on
-/// revient de [NotificationsScreen] (les notifications qu'on vient
-/// de lire disparaissent du badge).
+/// Redesigned notification bell — circular background, properly spaced,
+/// with an animated badge that only appears when there are unread items.
 class NotificationBell extends StatefulWidget {
   const NotificationBell({super.key});
 
@@ -21,19 +13,30 @@ class NotificationBell extends StatefulWidget {
   State<NotificationBell> createState() => _NotificationBellState();
 }
 
-class _NotificationBellState extends State<NotificationBell> {
+class _NotificationBellState extends State<NotificationBell>
+    with SingleTickerProviderStateMixin {
   int _unreadCount = 0;
   bool _loggedIn = false;
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnim;
 
   @override
   void initState() {
     super.initState();
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _bounceAnim = Tween<double>(begin: 1.0, end: 1.3).animate(
+      CurvedAnimation(parent: _bounceController, curve: Curves.elasticOut),
+    );
     _load();
     SessionService.instance.authChanged.addListener(_onAuthChanged);
   }
 
   @override
   void dispose() {
+    _bounceController.dispose();
     SessionService.instance.authChanged.removeListener(_onAuthChanged);
     super.dispose();
   }
@@ -48,8 +51,14 @@ class _NotificationBellState extends State<NotificationBell> {
     setState(() => _loggedIn = loggedIn);
     if (!loggedIn) return;
     try {
+      final prev = _unreadCount;
       final count = await NotificationService.instance.getUnreadCount();
-      if (mounted) setState(() => _unreadCount = count);
+      if (!mounted) return;
+      setState(() => _unreadCount = count);
+      // Bounce the badge if new notifications arrived
+      if (count > prev) {
+        _bounceController.forward(from: 0);
+      }
     } catch (_) {}
   }
 
@@ -57,45 +66,62 @@ class _NotificationBellState extends State<NotificationBell> {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const NotificationsScreen()),
     );
-    // Refresh badge once we come back — some may have been read.
     _load();
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_loggedIn) return const SizedBox.shrink();
-    return GestureDetector(
-      onTap: _openNotifications,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 4),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const Icon(Icons.notifications_none, size: 26, color: AppColors.textPrimary),
-            if (_unreadCount > 0)
-              Positioned(
-                right: -2,
-                top: -2,
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: const BoxDecoration(
-                    color: AppColors.danger,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      _unreadCount > 99 ? '99+' : '$_unreadCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w800,
+    return Padding(
+      padding: const EdgeInsets.only(right: 14),
+      child: GestureDetector(
+        onTap: _openNotifications,
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppColors.infoBg,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.border, width: 1),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              const Icon(
+                Icons.notifications_outlined,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              if (_unreadCount > 0)
+                Positioned(
+                  right: -2,
+                  top: -2,
+                  child: ScaleTransition(
+                    scale: _bounceAnim,
+                    child: Container(
+                      constraints:
+                          const BoxConstraints(minWidth: 16, minHeight: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: const BoxDecoration(
+                        color: AppColors.danger,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          _unreadCount > 99 ? '99+' : '$_unreadCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

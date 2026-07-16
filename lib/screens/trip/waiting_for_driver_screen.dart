@@ -23,16 +23,31 @@ class WaitingForDriverScreen extends StatefulWidget {
   State<WaitingForDriverScreen> createState() => _WaitingForDriverScreenState();
 }
 
-class _WaitingForDriverScreenState extends State<WaitingForDriverScreen> {
+class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
+    with SingleTickerProviderStateMixin {
   Timer? _poller;
   Booking? _booking;
   bool _navigating = false;
+
+  // Hourglass flip animation: flip 180°, rest, flip again, rest — loops
+  // seamlessly (ends at a full turn, visually identical to the start).
+  late final AnimationController _flipCtrl;
+  late final Animation<double> _flip;
 
   @override
   void initState() {
     super.initState();
     _booking = widget.booking;
     _poller = Timer.periodic(const Duration(seconds: 6), (_) => _checkStatus());
+
+    _flipCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 3200))
+      ..repeat();
+    _flip = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.5).chain(CurveTween(curve: Curves.easeInOut)), weight: 22),
+      TweenSequenceItem(tween: ConstantTween(0.5), weight: 28),
+      TweenSequenceItem(tween: Tween(begin: 0.5, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)), weight: 22),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 28),
+    ]).animate(_flipCtrl);
   }
 
   Future<void> _checkStatus() async {
@@ -99,6 +114,14 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen> {
     }
   }
 
+  void _goHome() {
+    _poller?.cancel();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MainTabScreen()),
+      (route) => false,
+    );
+  }
+
   void _openProfile() {
     _poller?.cancel();
     Navigator.of(context).pushAndRemoveUntil(
@@ -107,40 +130,24 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen> {
     );
   }
 
-  String _timeLabel(DateTime t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-
-  String _dateLabel(DateTime t) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${t.day} ${months[t.month - 1]} ${t.year}';
-  }
-
-  String _priceLabel(num v) {
-    final s = v.toStringAsFixed(0);
-    final buf = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(' ');
-      buf.write(s[i]);
-    }
-    return '$buf XAF';
-  }
-
   @override
   void dispose() {
     _poller?.cancel();
+    _flipCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final trip = widget.trip;
-    final seats = _booking?.seats ?? widget.booking.seats;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
+        centerTitle: true,
+        title: const Text('Waiting for the driver',
+            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
         actions: [
           IconButton(
             tooltip: 'Profile',
@@ -158,138 +165,263 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+
+          // ── Animated hourglass ──────────────────────────────
           Center(
             child: Container(
-              width: 120,
-              height: 120,
-              decoration: const BoxDecoration(color: AppColors.infoBg, shape: BoxShape.circle),
-              child: const Icon(Icons.hourglass_top, size: 52, color: AppColors.primary),
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                color: AppColors.infoBg,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(color: AppColors.primary.withOpacity(.08), blurRadius: 30, offset: const Offset(0, 10)),
+                ],
+              ),
+              child: RotationTransition(
+                turns: _flip,
+                child: const Icon(Icons.hourglass_top, size: 62, color: AppColors.primary),
+              ),
             ),
           ),
-          const SizedBox(height: 24),
-          const Text('Waiting for the driver',
+
+          const SizedBox(height: 26),
+          const Text("We've sent your request to the driver.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-          const SizedBox(height: 8),
-          const Text(
-            'We\'ve sent your request to the driver.\nYou\'ll be notified here as soon as they respond.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, height: 1.4),
-          ),
-          const SizedBox(height: 24),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+          const SizedBox(height: 6),
+          const Text("You'll be notified here as soon as they respond.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14.5, color: AppColors.textSecondary, height: 1.4)),
+
+          const SizedBox(height: 20),
+
+          // ── Response-time banner ────────────────────────────
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.textPrimary.withOpacity(0.05),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+              color: AppColors.gold.withOpacity(.12),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Row(children: [
+              Icon(Icons.schedule, size: 20, color: AppColors.gold),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text.rich(TextSpan(
+                  text: 'Most drivers respond within ',
+                  style: TextStyle(fontSize: 13.5, color: AppColors.textPrimary),
                   children: [
-                    Text('${trip.originCity} → ${trip.destinationCity}',
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                    if (trip.vehicleCategory.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                        decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(20)),
-                        child: Text(trip.vehicleCategory,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                      ),
+                    TextSpan(text: '5–10 minutes.',
+                        style: TextStyle(fontWeight: FontWeight.w800)),
                   ],
-                ),
-                const SizedBox(height: 4),
-                Text('${_dateLabel(trip.departureTime)} · ${_timeLabel(trip.departureTime)}',
-                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 14),
-                if (trip.originLocation.isNotEmpty)
-                  _pointRow(Icons.fiber_manual_record, AppColors.primary, 'Departure point', trip.originLocation),
-                if (trip.originLocation.isNotEmpty && trip.destinationLocation.isNotEmpty)
-                  const SizedBox(height: 10),
-                if (trip.destinationLocation.isNotEmpty)
-                  _pointRow(Icons.location_on, AppColors.gold, 'Drop-off point', trip.destinationLocation),
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _statBlock('Seats requested', '$seats'),
-                    ),
-                    Expanded(
-                      child: _statBlock('Price per seat', _priceLabel(trip.pricePerSeat)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                )),
+              ),
+            ]),
           ),
+
+          const SizedBox(height: 22),
+          Divider(color: AppColors.border.withOpacity(.7)),
+          const SizedBox(height: 18),
+
+          // ── What happens next? ──────────────────────────────
+          const Text('What happens next?',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
           const SizedBox(height: 18),
           Row(
-            children: const [
-              Icon(Icons.notifications_active_outlined, size: 16, color: AppColors.textSecondary),
-              SizedBox(width: 6),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _StepItem(icon: Icons.send_outlined, label: 'Request sent', rotateIcon: true),
               Expanded(
-                child: Text(
-                  'This request can take time. We\'ll notify you immediately.',
-                  style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                child: SizedBox(
+                  height: 52,
+                  child: Center(
+                    child: CustomPaint(
+                      size: const Size(double.infinity, 2),
+                      painter: _HDashPainter(color: AppColors.primary.withOpacity(.3)),
+                    ),
+                  ),
                 ),
               ),
+              const _StepItem(icon: Icons.notifications_none, label: 'Driver notified'),
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: Center(
+                    child: CustomPaint(
+                      size: const Size(double.infinity, 2),
+                      painter: _HDashPainter(color: AppColors.primary.withOpacity(.3)),
+                    ),
+                  ),
+                ),
+              ),
+              const _StepItem(icon: Icons.person_outline, label: 'Driver responds'),
             ],
           ),
-          const SizedBox(height: 12),
-          Center(
-            child: TextButton(
-              onPressed: _withdraw,
-              child: const Text('Withdraw request', style: TextStyle(color: AppColors.danger)),
+
+          const SizedBox(height: 22),
+
+          // ── Notify card ─────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.infoBg.withOpacity(.7),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 8, offset: const Offset(0, 3))],
+                  ),
+                  child: const Icon(Icons.notifications_active_outlined, size: 22, color: AppColors.primary),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("We'll notify you immediately",
+                          style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                      SizedBox(height: 4),
+                      Text("You can continue using the app.\nWe'll let you know as soon as the driver accepts.",
+                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
+
+          const SizedBox(height: 22),
+
+          // ── Go Home button ──────────────────────────────────
+          Container(
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(color: AppColors.primary.withOpacity(.3), blurRadius: 16, offset: const Offset(0, 6)),
+              ],
+            ),
+            child: Material(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: _goHome,
+                borderRadius: BorderRadius.circular(16),
+                child: const Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.home_outlined, color: Colors.white, size: 22),
+                      SizedBox(width: 10),
+                      Text('Go Home',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // ── "or" divider ────────────────────────────────────
+          Row(children: [
+            Expanded(child: Divider(color: AppColors.border.withOpacity(.8))),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 14),
+              child: Text('or', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            ),
+            Expanded(child: Divider(color: AppColors.border.withOpacity(.8))),
+          ]),
+
+          const SizedBox(height: 14),
+
+          // ── Withdraw request ────────────────────────────────
+          SizedBox(
+            height: 54,
+            child: OutlinedButton(
+              onPressed: _withdraw,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: AppColors.danger.withOpacity(.5), width: 1.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.cancel_outlined, size: 20, color: AppColors.danger),
+                  SizedBox(width: 10),
+                  Text('Withdraw request',
+                      style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800, fontSize: 15.5)),
+                ],
+              ),
+            ),
+          ),
+
           const SizedBox(height: 12),
+          const Center(
+            child: Text('You can cancel for free up to 2 hours before departure.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
+}
 
-  Widget _pointRow(IconData icon, Color color, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
-            ],
-          ),
-        ),
-      ],
-    );
+// ── Step item (circle icon + label) ─────────────────────────────────────
+class _StepItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool rotateIcon;
+  const _StepItem({required this.icon, required this.label, this.rotateIcon = false});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget child = Icon(icon, size: 22, color: AppColors.primary);
+    if (rotateIcon) child = Transform.rotate(angle: -0.6, child: child);
+    return Column(children: [
+      Container(
+        width: 52, height: 52,
+        decoration: const BoxDecoration(color: AppColors.infoBg, shape: BoxShape.circle),
+        child: Center(child: child),
+      ),
+      const SizedBox(height: 8),
+      Text(label,
+          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+    ]);
+  }
+}
+
+// ── Horizontal dashed line ──────────────────────────────────────────────
+class _HDashPainter extends CustomPainter {
+  final Color color;
+  _HDashPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    const dash = 6.0, gap = 5.0;
+    final y = size.height / 2;
+    double x = 6;
+    while (x < size.width - 6) {
+      canvas.drawLine(Offset(x, y), Offset((x + dash).clamp(0, size.width - 6), y), paint);
+      x += dash + gap;
+    }
   }
 
-  Widget _statBlock(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
-        const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
-      ],
-    );
-  }
+  @override
+  bool shouldRepaint(covariant _HDashPainter old) => old.color != color;
 }

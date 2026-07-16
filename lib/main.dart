@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'screens/splash_screen.dart';
-import 'services/location_background_service.dart';
+import 'screens/onboarding/onboarding_screen.dart';
+import 'services/locale_service.dart';
 import 'theme/app_theme.dart';
 
-Future<void> main() async {
+final localeNotifier = ValueNotifier<Locale>(const Locale('en'));
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialize background location service once at startup.
-  // This registers the service with Android — it doesn't start
-  // sharing yet, just makes it ready to be started later when the
-  // driver taps "Share location" in LiveTrackingScreen.
-  await LocationBackgroundService.instance.initialize();
+  localeNotifier.value = await LocaleService.loadSaved();
   runApp(const HolaRideApp());
 }
 
@@ -18,11 +20,52 @@ class HolaRideApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'HolaRide',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      home: const SplashScreen(),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) => MaterialApp(
+        title: 'HolaRide',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: const _AppEntry(),
+      ),
+    );
+  }
+}
+
+class _AppEntry extends StatefulWidget {
+  const _AppEntry();
+  @override
+  State<_AppEntry> createState() => _AppEntryState();
+}
+
+class _AppEntryState extends State<_AppEntry> {
+  Widget? _home;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('onboarding_done') ?? false;
+    if (mounted) setState(() => _home = done ? const SplashScreen() : const OnboardingScreen());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _home ?? const Scaffold(
+      backgroundColor: Color(0xFF0D2137),
+      body: Center(child: CircularProgressIndicator(color: Colors.white)),
     );
   }
 }

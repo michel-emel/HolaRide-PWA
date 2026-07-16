@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
   http: ^1.2.0
   shared_preferences: ^2.2.0
   cupertino_icons: ^1.0.6
@@ -17,8 +20,6 @@ dependencies:
   geolocator: ^11.0.0
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
-  flutter_background_service: ^5.0.10
-  flutter_local_notifications: ^17.2.4
 
 dev_dependencies:
   flutter_test:
@@ -26,9 +27,21 @@ dev_dependencies:
   flutter_lints: ^4.0.0
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - assets/images/splash_bg.jpg
     - assets/images/hero_car.png
     - assets/images/empty_trips_bg.png
     - assets/images/ride_share_car.png
+    - assets/images/onboard_1.png
+    - assets/images/onboard_2.png
+    - assets/images/hero_banner.png
+    - assets/images/find_ride_car.png
+    - assets/images/offer_ride_car.png
+    - assets/images/ride_together.png
+    - assets/images/learn_more.png
+    - assets/images/welcome_bg.png
+    - assets/images/hero_road.png
+    - assets/images/orange_money.png
+    - assets/images/mtn_money.png

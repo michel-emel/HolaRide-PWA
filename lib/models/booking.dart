@@ -34,28 +34,6 @@ enum BookingStatus {
     }
   }
 
-  /// Short label shown on badges, e.g. in "My Bookings".
-  String get label {
-    switch (this) {
-      case BookingStatus.pendingDriverAcceptance:
-        return 'Waiting';
-      case BookingStatus.pendingPayment:
-        return 'Awaiting payment';
-      case BookingStatus.paid:
-        return 'Paid';
-      case BookingStatus.rejected:
-        return 'Declined';
-      case BookingStatus.cancelled:
-        return 'Cancelled';
-      case BookingStatus.completed:
-        return 'Completed';
-      case BookingStatus.noShow:
-        return 'No-show';
-      case BookingStatus.unknown:
-        return 'Unknown';
-    }
-  }
-
   /// Semantic color bucket — actual colors are resolved in the
   /// StatusBadge widget from AppColors, kept out of the model on purpose.
   String get kind {

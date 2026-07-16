@@ -184,12 +184,49 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
         bottomNavigationBar: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-            child: FilledButton.icon(
-              onPressed: () => Navigator.of(context).push(
+            child: InkWell(
+              onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const CreateTripScreen()),
               ).then((_) => _load()),
-              icon: const Icon(Icons.add),
-              label: const Text('Create New Trip'),
+              borderRadius: BorderRadius.circular(16),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, Color(0xFF2D9E6E)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.35),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_circle_outline, color: Colors.white, size: 22),
+                      SizedBox(width: 10),
+                      Text(
+                        'Create a New Trip',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15.5,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Icon(Icons.arrow_forward, color: Colors.white70, size: 18),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),

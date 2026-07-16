@@ -24,7 +24,8 @@ class AppColors {
   static const Color goldDark = Color(0xFFE0930F);
 
   // Neutrals
-  static const Color background = Color(0xFFF1E9DA); // warm cream
+  // static const Color background = Color(0xFFF1E9DA); // warm cream
+  static const Color background = Color(0xFFF9F6F0);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceMuted = Color(0xFFF0F2F8);
   static const Color border = Color(0xFFE5E7EB);

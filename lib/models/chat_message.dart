@@ -21,6 +21,7 @@ class ChatMessage {
   final String senderName;
   final String text;
   final bool isSystem;
+  final bool isDeleted;
   final DateTime createdAt;
 
   ChatMessage({
@@ -29,6 +30,7 @@ class ChatMessage {
     required this.senderName,
     required this.text,
     required this.isSystem,
+    required this.isDeleted,
     required this.createdAt,
   });
 
@@ -44,6 +46,7 @@ class ChatMessage {
       senderName: fullName,
       text: json['content']?.toString() ?? '',
       isSystem: json['message_type'] == 'system',
+      isDeleted: json['message_type'] == 'deleted',
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
     );
   }

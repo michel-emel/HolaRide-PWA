@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'session_service.dart';
-import '../screens/onboarding/phone_entry_screen.dart';
+import '../screens/onboarding/welcome_screen.dart';
 
 /// Gate for anything that needs an account — booking a seat,
 /// publishing a trip, viewing bookings, becoming a driver, editing the
@@ -21,7 +21,7 @@ Future<bool> requireLogin(BuildContext context, {String? reason}) async {
   if (await SessionService.instance.isLoggedIn()) return true;
   if (!context.mounted) return false;
   final result = await Navigator.of(context).push<bool>(
-    MaterialPageRoute(builder: (_) => PhoneEntryScreen(isGate: true, gateReason: reason)),
+    MaterialPageRoute(builder: (_) => WelcomeScreen(isGate: true, gateReason: reason)),
   );
   return result == true;
 }

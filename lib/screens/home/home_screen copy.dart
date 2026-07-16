@@ -423,11 +423,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: AppColors.surface,
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                   child: const Row(mainAxisSize: MainAxisSize.min, children: [
                     Text('Learn More', style: TextStyle(color: Color(0xFF1B6B45),
-                      fontWeight: FontWeight.w700, fontSize: 12.5)),
+                      fontWeight: FontWeight.w700, fontSize: 11)),
                     SizedBox(width: 5),
                     Icon(Icons.arrow_forward, size: 12, color: Color(0xFF1B6B45)),
                   ]),
