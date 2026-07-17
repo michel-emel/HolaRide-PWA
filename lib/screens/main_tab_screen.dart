@@ -12,6 +12,7 @@ import 'search/search_form_screen.dart';
 import 'dart:async';
 import '../models/booking.dart';
 import '../services/booking_service.dart';
+import '../services/driver_service.dart';
 import 'trip/chat_screen.dart';
 
 class MainTabScreen extends StatefulWidget {
@@ -29,7 +30,10 @@ class _MainTabScreenState extends State<MainTabScreen> {
 
   final ValueNotifier<int> _myTripsRefreshSignal = ValueNotifier<int>(0);
 
-  // Active trip chat FAB
+  // Active trip chat FAB.
+  // Shows for BOTH roles:
+  //   - passenger mode: your next PAID booking
+  //   - driver mode:    your PUBLISHED or ONGOING trip
   String? _activeTripId;
   String? _activeTripLabel;
   int _unreadCount = 0;
@@ -52,20 +56,53 @@ class _MainTabScreenState extends State<MainTabScreen> {
   Future<void> _checkActiveTrip() async {
     if (!_loggedIn || !mounted) return;
     try {
-      final bookings = await BookingService.instance.myBookings();
-      final active = bookings.where((b) => b.status == BookingStatus.paid).toList();
-      if (!mounted) return;
-      if (active.isEmpty) {
-        setState(() { _activeTripId = null; _activeTripLabel = null; _unreadCount = 0; });
-        return;
+      String? tripId;
+      String? label;
+
+      if (_driverMode) {
+        // Driver: the FAB points to the chat of your published/ongoing
+        // trip (a driver can only have one published trip at a time,
+        // but sort by departure anyway to stay safe).
+        final trips = await DriverService.instance.myTrips();
+        final active = trips
+            .where((t) => t.status == 'published' || t.status == 'ongoing')
+            .toList()
+          ..sort((a, b) => a.departureTime.compareTo(b.departureTime));
+        if (active.isNotEmpty) {
+          final t = active.first;
+          tripId = t.id;
+          label = '${t.originCity} → ${t.destinationCity}';
+        }
+      } else {
+        // Passenger: your next paid booking. Skip bookings without a
+        // real tripId — ChatScreen expects a TRIP id, never a booking id.
+        final bookings = await BookingService.instance.myBookings();
+        final active = bookings
+            .where((b) =>
+                b.status == BookingStatus.paid &&
+                b.tripId != null &&
+                b.tripId!.isNotEmpty)
+            .toList()
+          ..sort((a, b) {
+            final da = a.trip?.departureTime;
+            final db = b.trip?.departureTime;
+            if (da == null || db == null) return 0;
+            return da.compareTo(db);
+          });
+        if (active.isNotEmpty) {
+          final b = active.first;
+          tripId = b.tripId;
+          label = b.trip != null
+              ? '${b.trip!.originCity} → ${b.trip!.destinationCity}'
+              : 'Active trip';
+        }
       }
-      final b = active.first;
-      final trip = b.trip;
+
+      if (!mounted) return;
       setState(() {
-        _activeTripId = b.tripId ?? b.id;
-        _activeTripLabel = trip != null
-          ? '${trip.originCity} → ${trip.destinationCity}'
-          : 'Active trip';
+        _activeTripId = tripId;
+        _activeTripLabel = label;
+        if (tripId == null) _unreadCount = 0;
       });
     } catch (_) {}
   }
@@ -91,8 +128,12 @@ class _MainTabScreenState extends State<MainTabScreen> {
       _driverMode = driverMode;
       _index = 0;
     });
-    if (loggedIn) _startChatCheck();
-    else { _chatCheckTimer?.cancel(); setState(() { _activeTripId = null; _activeTripLabel = null; }); }
+    if (loggedIn) {
+      _startChatCheck();
+    } else {
+      _chatCheckTimer?.cancel();
+      setState(() { _activeTripId = null; _activeTripLabel = null; _unreadCount = 0; });
+    }
   }
 
   void _onDriverModeChanged() async {
@@ -100,6 +141,10 @@ class _MainTabScreenState extends State<MainTabScreen> {
     final driverMode = await SessionService.instance.isDriverMode();
     if (!mounted) return;
     setState(() => _driverMode = driverMode);
+    // The active trip depends on the role — refresh right away so the
+    // FAB switches from "my paid booking" to "my published trip"
+    // (or vice-versa) without waiting for the next 15s tick.
+    _checkActiveTrip();
   }
 
   @override
@@ -162,12 +207,17 @@ class _MainTabScreenState extends State<MainTabScreen> {
       backgroundColor: AppColors.background,
       extendBody: true,
       body: IndexedStack(index: safeIndex, children: tabs),
-      floatingActionButton: (_activeTripId != null && safeIndex != 0)
+      // The FAB shows on EVERY tab (Home included) as long as there's
+      // an active trip; it sits above the nav bar so it never covers
+      // meaningful content. It vanishes on its own once the trip is
+      // completed or cancelled (those statuses no longer match the
+      // active-trip check).
+      floatingActionButton: _activeTripId != null
           ? _TripChatFab(
               label: _activeTripLabel ?? 'Trip chat',
               unreadCount: _unreadCount,
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => ChatScreen(tripId: _activeTripId!))),
+                  MaterialPageRoute(builder: (_) => ChatScreen(tripId: _activeTripId!))),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
