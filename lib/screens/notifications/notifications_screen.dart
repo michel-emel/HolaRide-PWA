@@ -143,6 +143,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: AppColors.background,
       appBar: buildAppHeader(
         l.notificationsTitle,
+        showBackButton: true,
         extraActions: unreadCount > 0
             ? [
                 TextButton(

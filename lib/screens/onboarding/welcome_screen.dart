@@ -155,44 +155,53 @@ class WelcomeScreen extends StatelessWidget {
                 const SizedBox(height: 16),
               ],
 
-              // Create account button
-              SizedBox(width: double.infinity, height: 54,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => PhoneEntryScreen(isGate: isGate))),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary, foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    const Icon(Icons.person_add_outlined, size: 18),
-                    const SizedBox(width: 10),
-                    Text(l.welcomeCreateAccount,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                    const Spacer(),
-                    const Icon(Icons.arrow_forward, size: 18),
-                  ]))),
+          // Create account button
+        SizedBox(width: double.infinity, height: 54,
+            child: ElevatedButton(
+              onPressed: () async {
+                final result = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(builder: (_) => PhoneEntryScreen(isGate: isGate)));
+                if (isGate && result == true && context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary, foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Icon(Icons.person_add_outlined, size: 18),
+                const SizedBox(width: 10),
+                Text(l.welcomeCreateAccount,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                const Spacer(),
+                const Icon(Icons.arrow_forward, size: 18),
+              ]))),
 
-              const SizedBox(height: 12),
+        const SizedBox(height: 12),
 
-              // Sign in button
-              SizedBox(width: double.infinity, height: 54,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => LoginScreen(isGate: isGate))),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary, width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    const Icon(Icons.login_outlined, size: 18),
-                    const SizedBox(width: 10),
-                    Text(l.welcomeSignIn,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                    const Spacer(),
-                    const Icon(Icons.arrow_forward, size: 18),
-                  ]))),
-
+        // Sign in button
+        SizedBox(width: double.infinity, height: 54,
+            child: OutlinedButton(
+              onPressed: () async {
+                final result = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(builder: (_) => LoginScreen(isGate: isGate)));
+                if (isGate && result == true && context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+              style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Icon(Icons.login_outlined, size: 18),
+                const SizedBox(width: 10),
+                Text(l.welcomeSignIn,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                const Spacer(),
+                const Icon(Icons.arrow_forward, size: 18),
+              ]))),
               const SizedBox(height: 20),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 const Icon(Icons.lock_outline, size: 13, color: AppColors.textSecondary),
