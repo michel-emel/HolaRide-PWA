@@ -7,13 +7,11 @@ import 'screens/onboarding/onboarding_screen.dart';
 import 'services/locale_service.dart';
 import 'theme/app_theme.dart';
 import 'services/location_sharing_service.dart';
-import 'services/maps_script_injector.dart';
 
 final localeNotifier = ValueNotifier<Locale>(const Locale('en'));
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  injectGoogleMapsScript();
   await LocationSharingService.init();
   localeNotifier.value = await LocaleService.loadSaved();
   runApp(const HolaRideApp());
