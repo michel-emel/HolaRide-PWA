@@ -111,12 +111,15 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
       ).listen((pos) {
         if (!mounted) return;
         setState(() => _me = pos);
-        if (_isDriver && _follow) {
-          _moveCamera(LatLng(pos.latitude, pos.longitude));
-        } else if (!_isDriver && _follow && _driverPos == null) {
-          // No driver signal yet: at least zoom to where *you* are
-          // instead of leaving the whole-country overview.
-          _moveCamera(LatLng(pos.latitude, pos.longitude));
+        final target = LatLng(pos.latitude, pos.longitude);
+        if (_isDriver || _driverPos == null) {
+          // Driver view: always track own position. Passenger view:
+          // only until the driver's signal arrives. In both cases the
+          // FIRST fix always moves+zooms the camera, even if _follow
+          // was wrongly disabled by a spurious camera event on web.
+          final first = !_hadFix;
+          _hadFix = true;
+          if (first || _follow) _moveCamera(target);
         }
       });
     }
@@ -281,9 +284,11 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
           onMapCreated: (c) => _map = c,
           markers: _buildMarkers(),
           // Any user-initiated camera move disables auto-follow until
-          // the re-center button is tapped.
+          // the re-center button is tapped. Only armed after the first
+          // fix: on web this callback also fires during initial render,
+          // which used to kill _follow before any GPS signal arrived.
           onCameraMoveStarted: () {
-            if (!_programmaticMove && _follow) {
+            if (_hadFix && !_programmaticMove && _follow) {
               setState(() => _follow = false);
             }
           },

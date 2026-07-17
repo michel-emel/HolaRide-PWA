@@ -10,8 +10,8 @@ import 'api_client.dart';
 /// L'anon key est faite pour être embarquée dans l'app : seule, elle ne
 /// donne accès à rien — les lectures live_locations exigent le token
 /// signé par le backend (realtime-token) + les policies RLS.
-const _supabaseUrl = 'https://TON-REF-PROJET.supabase.co';
-const _supabaseAnonKey = 'TON-ANON-KEY';
+const _supabaseUrl = 'https://Tnbyhttwacptmbjrvpfec.supabase.co';
+const _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ieWh0dHdhY3B0bWJqcnZwZmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDE5MTQsImV4cCI6MjA5NzcxNzkxNH0.YkqP0wIXH0nh1seyPtpfq0Cl_S91xZICCp9fpyE_EHQ';
 
 /// One live position received from the other side of the trip.
 class LivePosition {
