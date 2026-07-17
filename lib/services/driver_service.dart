@@ -110,4 +110,14 @@ class DriverService {
   Future<void> markTripCompleted(String tripId) async {
     await _api.patch('/trips/$tripId/complete');
   }
+
+  /// `POST /trips/{trip_id}/start` — published → ongoing. Idempotent
+  /// server-side (starting an already-ongoing trip just re-answers
+  /// {"status": "ongoing"}). Location sharing only works while the
+  /// trip is ongoing. NOTE: this one really is POST, not PATCH — it's
+  /// part of the live-location router, which uses POST for both
+  /// /start and /position.
+  Future<void> startTrip(String tripId) async {
+    await _api.post('/trips/$tripId/start');
+  }
 }

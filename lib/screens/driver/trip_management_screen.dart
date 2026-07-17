@@ -5,6 +5,7 @@ import '../../services/api_client.dart';
 import '../../services/driver_service.dart';
 import '../../theme/app_colors.dart';
 import '../trip/chat_screen.dart';
+import '../trip/live_trip_screen.dart';
 import '../trip/rate_trip_screen.dart';
 import '../../widgets/profile_icon_button.dart';
 import '../../widgets/status_badge.dart';
@@ -24,9 +25,20 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
   String? _error;
   final Set<String> _actingOn = {};
 
+  // Whether the trip is currently 'ongoing' (location sharing active).
+  // POST /trips/{id}/start is idempotent server-side, so even if this
+  // screen opens on an already-started trip and the driver taps Start
+  // again, nothing breaks — the backend just answers {"status":"ongoing"}.
+  bool _tripStarted = false;
+  bool _starting = false;
+
   @override
   void initState() {
     super.initState();
+    // trip.status is now exposed by the backend/model — so reopening
+    // this screen on an already-ongoing trip shows the green banner
+    // directly instead of the Start button.
+    _tripStarted = widget.trip.status == 'ongoing';
     _load();
   }
 
@@ -92,6 +104,55 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // ── Start trip (published → ongoing, enables location sharing) ──
+  Future<void> _startTrip() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Start this trip?'),
+        content: const Text(
+          'The trip will be marked as ongoing. Your paid passengers will be '
+          'able to follow your live position until you mark it completed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Not yet', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Start Trip',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _starting = true);
+    try {
+      await DriverService.instance.startTrip(widget.trip.id);
+      if (!mounted) return;
+      setState(() => _tripStarted = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Trip started — passengers can now follow you.')),
+      );
+    } on ApiException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error in lib/screens/driver/trip_management_screen.dart: $e');
+      _showError('Could not start the trip. Try again.');
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
   }
 
   Future<void> _confirmAndRun(
@@ -513,6 +574,59 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
             ),
           ),
           const SizedBox(height: 20),
+
+          // ── Start Trip / Trip in progress ─────────────────────
+          if (!_tripStarted)
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: _starting ? null : _startTrip,
+                icon: _starting
+                    ? const SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.play_arrow_rounded, size: 22),
+                label: Text(_starting ? 'Starting...' : 'Start Trip'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                ),
+              ),
+            )
+          else
+            InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => LiveTripScreen(trip: widget.trip)),
+              ),
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.successBg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.success.withOpacity(.3)),
+                ),
+                child: const Row(children: [
+                  Icon(Icons.gps_fixed, size: 18, color: AppColors.success),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text('Trip in progress — tap to open the live map.',
+                        style: TextStyle(
+                            color: AppColors.success, fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  ),
+                  Icon(Icons.map_outlined, size: 18, color: AppColors.success),
+                  SizedBox(width: 4),
+                  Icon(Icons.chevron_right, size: 18, color: AppColors.success),
+                ]),
+              ),
+            ),
+
+          const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _markCompleted,
             icon: const Icon(Icons.check_circle_outline, color: AppColors.success),

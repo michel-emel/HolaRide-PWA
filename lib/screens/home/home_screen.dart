@@ -32,7 +32,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageCtrl = PageController();
   int _currentPage = 0;
   Timer? _timer;
+  Timer? _tripsRefreshTimer;
   static const int _perPage = 2;
+  // How often we silently re-fetch trips from the server so newly
+  // published trips show up without the user having to pull-to-refresh.
+  static const Duration _tripsRefreshInterval = Duration(seconds: 10);
 
   // ── Hero banner state ─────────────────────────────────────────
   final PageController _heroCtrl = PageController();
@@ -47,6 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
     SessionService.instance.authChanged.addListener(_onAuth);
     SessionService.instance.driverModeChanged.addListener(_onDriverMode);
     Future.delayed(const Duration(seconds: 3), _maybeShowPopup);
+    // Silently re-fetch the trips list on a timer, so trips published
+    // by other users while this screen is open show up automatically.
+    _tripsRefreshTimer = Timer.periodic(_tripsRefreshInterval, (_) => _refreshTrips());
     // Auto-swipe hero every 3 seconds (ping-pong between first and last)
     _heroTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (!mounted || !_heroCtrl.hasClients) return;
@@ -96,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
     SessionService.instance.authChanged.removeListener(_onAuth);
     SessionService.instance.driverModeChanged.removeListener(_onDriverMode);
     _timer?.cancel();
+    _tripsRefreshTimer?.cancel();
     _heroTimer?.cancel();
     _pageCtrl.dispose();
     _heroCtrl.dispose();
@@ -107,26 +115,53 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = loggedIn ? await SessionService.instance.getUser() : null;
     final dm = await SessionService.instance.isDriverMode();
     if (mounted) setState(() { _loggedIn = loggedIn; _user = user; _driverMode = dm; });
+    await _fetchTrips(showLoading: true);
+    if (loggedIn) {
+      try {
+        await NotificationService.instance.getUnreadCount();
+      } catch (_) {}
+    }
+  }
+
+  // Silent background refresh: re-fetches the trips list without
+  // showing the loading spinner, so newly published trips appear
+  // automatically while the user is browsing the home screen.
+  Future<void> _refreshTrips() async {
+    if (!mounted) return;
+    await _fetchTrips(showLoading: false);
+  }
+
+  Future<void> _fetchTrips({required bool showLoading}) async {
+    if (showLoading && mounted) setState(() => _loadingTrips = true);
     try {
       final trips = await TripService.instance.search(limit: 10);
       if (!mounted) return;
-      setState(() { _nearbyTrips = trips; _loadingTrips = false; });
-      if (trips.isNotEmpty) {
-        _timer = Timer.periodic(const Duration(seconds: 3), (_) {
-          if (!mounted || !_pageCtrl.hasClients) return;
-          final pageCount = (trips.length / _perPage).ceil();
-          _pageCtrl.animateToPage((_currentPage + 1) % pageCount,
-              duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-        });
-      }
-      if (loggedIn) {
-        try {
-          await NotificationService.instance.getUnreadCount();
-        } catch (_) {}
+      // Restart the carousel auto-scroll only if the trip count actually
+      // changed, so a silent refresh doesn't interrupt the current swipe.
+      final countChanged = trips.length != _nearbyTrips.length;
+      setState(() { _nearbyTrips = trips; _loadingTrips = false; _error = null; });
+      if (countChanged) {
+        _timer?.cancel();
+        _currentPage = 0;
+        if (trips.isNotEmpty) {
+          _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+            if (!mounted || !_pageCtrl.hasClients) return;
+            final pageCount = (_nearbyTrips.length / _perPage).ceil();
+            if (pageCount == 0) return;
+            _currentPage = (_currentPage + 1) % pageCount;
+            _pageCtrl.animateToPage(_currentPage,
+                duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+          });
+        }
       }
     } catch (_) {
       if (!mounted) return;
-      setState(() { _error = 'Could not load trips.'; _loadingTrips = false; });
+      // Keep whatever trips are already on screen if a silent refresh
+      // fails; only surface the error banner on the very first load.
+      setState(() {
+        _loadingTrips = false;
+        if (showLoading) _error = 'Could not load trips.';
+      });
     }
   }
 

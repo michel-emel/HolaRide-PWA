@@ -17,6 +17,7 @@ import '../payment/payment_screen.dart';
 import '../payment/pay_remaining_screen.dart';
 import '../trip/waiting_for_driver_screen.dart';
 import '../trip/chat_screen.dart';
+import '../trip/live_trip_screen.dart';
 import '../trip/rate_trip_screen.dart';
 import 'cancel_withdraw_screen.dart';
 import 'rebook_screen.dart';
@@ -281,9 +282,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     child: FilledButton.icon(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => TripDetailScreen(tripId: trip.id)),
-                        );
+                        // While the trip is ongoing, "Track" means the
+                        // real live map; otherwise fall back to the
+                        // plain trip detail as before.
+                        if (trip.status == 'ongoing') {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => LiveTripScreen(trip: trip)),
+                          );
+                        } else {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => TripDetailScreen(tripId: trip.id)),
+                          );
+                        }
                       },
                       icon: const Icon(Icons.my_location, size: 18),
                       label: Text(l.bookingsTrack),
@@ -413,6 +423,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           final isPast = !_upcomingStatuses.contains(b.status) 
           || b.status == BookingStatus.pendingPayment
           || b.status == BookingStatus.cancelled;
+          final isLive = b.status == BookingStatus.paid && trip != null && trip.status == 'ongoing';
           
           return Dismissible(
             key: Key(b.id),
@@ -515,6 +526,32 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     Text(_priceLabel(b.amountTotal),
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.primary)),
                   ]),
+                  // Live trip — follow the driver
+                  if (isLive) ...[
+                    const SizedBox(height: 10),
+                    InkWell(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => LiveTripScreen(trip: trip)),
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: AppColors.successBg,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.success.withOpacity(.3)),
+                        ),
+                        child: const Row(children: [
+                          Icon(Icons.gps_fixed, size: 15, color: AppColors.success),
+                          SizedBox(width: 8),
+                          Expanded(child: Text('Trip started — follow your driver live',
+                            style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700, fontSize: 12.5))),
+                          Icon(Icons.chevron_right, size: 16, color: AppColors.success),
+                        ]),
+                      ),
+                    ),
+                  ],
                   // Rate badge
                   if (pending.isNotEmpty) ...[
                     const SizedBox(height: 10),
