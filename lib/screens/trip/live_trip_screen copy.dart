@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -33,14 +31,6 @@ import '../../theme/app_colors.dart';
 ///    n'a de sens une fois le trip complété.
 /// Le flux d'origine du driver (_init, _driverCard) est inchangé en
 /// dehors de ce nouvel état terminal partagé.
-///
-/// ✅ NOUVEAU (marqueurs) : les icônes des marqueurs (conducteur,
-/// passagers, moi) sont maintenant dessinées via Canvas
-/// (_createColoredMarker) plutôt qu'avec
-/// BitmapDescriptor.defaultMarkerWithHue(), que
-/// google_maps_flutter_web ignore souvent et rend systématiquement en
-/// rouge quelle que soit la teinte demandée. Le rendu Canvas est
-/// identique sur web et mobile.
 class LiveTripScreen extends StatefulWidget {
   final Trip trip;
   const LiveTripScreen({super.key, required this.trip});
@@ -59,7 +49,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
 
   StreamSubscription<LivePosition>? _posSub;
   StreamSubscription<Position>? _meSub;
-  StreamSubscription<void>? _tripEndedSub;
+  StreamSubscription<void>? _tripEndedSub; // ✅ NOUVEAU
   Timer? _ticker;
   Position? _me;
   bool _follow = true;
@@ -67,18 +57,10 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   bool _hadFix = false; // first GPS fix received → forces the initial zoom
   String? _permError;
 
-  // Passe à true dès que le service signale la fin du trajet (409 côté
-  // backend). Remplace toute la zone carte + carte du bas par un état
-  // terminal simple.
+  // ✅ NOUVEAU : passe à true dès que le service signale la fin du
+  // trajet (409 côté backend). Remplace toute la zone carte + carte du
+  // bas par un état terminal simple.
   bool _tripEnded = false;
-
-  // ✅ NOUVEAU : icônes de marqueur générées via Canvas, chargées une
-  // fois de façon asynchrone dans _init(). Null tant qu'elles ne sont
-  // pas prêtes — _buildMarkers() retombe sur defaultMarkerWithHue en
-  // attendant, uniquement le temps du tout premier rendu.
-  BitmapDescriptor? _driverIcon;
-  BitmapDescriptor? _passengerIcon;
-  BitmapDescriptor? _meIcon;
 
   // Yaoundé — fallback center before the first position arrives.
   static const _fallbackCenter = LatLng(3.848, 11.502);
@@ -91,51 +73,11 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     _init();
   }
 
-  /// Draws a simple colored circle marker with a white border, rendered
-  /// via Canvas so it's identical on web and mobile — unlike
-  /// BitmapDescriptor.defaultMarkerWithHue(), which google_maps_flutter_web
-  /// often ignores and renders red regardless of the hue requested.
-  Future<BitmapDescriptor> _createColoredMarker(Color color) async {
-    const double size = 90;
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, size, size));
-
-    final fillPaint = Paint()..color = color;
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6;
-
-    const center = Offset(size / 2, size / 2);
-    const radius = size / 2 - 6;
-    canvas.drawCircle(center, radius, fillPaint);
-    canvas.drawCircle(center, radius, borderPaint);
-
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(size.toInt(), size.toInt());
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
-  }
-
   Future<void> _init() async {
     final user = await SessionService.instance.getUser();
     if (!mounted) return;
     _myId = user?.id;
     _isDriver = _myId != null && _myId == widget.trip.driverId;
-
-    // ✅ NOUVEAU : générer les trois icônes en parallèle, une seule
-    // fois. Pas bloquant pour le reste de l'init — on ne fait
-    // qu'attendre le résultat ici pour que le tout premier
-    // _buildMarkers() les ait déjà disponibles.
-    final iconResults = await Future.wait([
-      _createColoredMarker(AppColors.success),   // conducteur — vert
-      _createColoredMarker(AppColors.warning),   // passagers — orange/gold
-      _createColoredMarker(AppColors.primary),   // moi — couleur principale de l'app
-    ]);
-    if (!mounted) return;
-    _driverIcon = iconResults[0];
-    _passengerIcon = iconResults[1];
-    _meIcon = iconResults[2];
 
     // Consentement passager AVANT tout appel à _svc.start(). Le driver
     // n'est jamais concerné par ce bloc (if (!_isDriver)).
@@ -167,10 +109,10 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
       }
     }
 
-    // Écouter le signal de fin de trajet, pour les DEUX rôles — si le
-    // driver ferme le trajet pendant que le passager est encore sur
-    // cet écran (ou vice-versa), les deux doivent voir le même état
-    // terminal, pas une carte qui continue de tourner à vide.
+    // ✅ NOUVEAU : écouter le signal de fin de trajet, pour les DEUX
+    // rôles — si le driver ferme le trajet pendant que le passager est
+    // encore sur cet écran (ou vice-versa), les deux doivent voir le
+    // même état terminal, pas une carte qui continue de tourner à vide.
     _tripEndedSub = _svc.tripEnded.listen((_) {
       if (!mounted) return;
       setState(() => _tripEnded = true);
@@ -182,9 +124,9 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     _permError = await _svc.start(widget.trip.id, shareLocation: shareLocation);
     if (!mounted) return;
 
-    // Si le trajet était déjà terminé au moment où l'écran s'est
-    // ouvert (ex. ouverture tardive), refléter ça immédiatement plutôt
-    // que d'attendre un premier 409.
+    // ✅ NOUVEAU : si le trajet était déjà terminé au moment où l'écran
+    // s'est ouvert (ex. ouverture tardive), refléter ça immédiatement
+    // plutôt que d'attendre un premier 409.
     if (_svc.hasTripEnded) {
       setState(() => _tripEnded = true);
       return;
@@ -249,7 +191,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     _ticker?.cancel();
     _posSub?.cancel();
     _meSub?.cancel();
-    _tripEndedSub?.cancel();
+    _tripEndedSub?.cancel(); // ✅ NOUVEAU
     _svc.stop();
     _map?.dispose();
     super.dispose();
@@ -349,7 +291,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
         rotation: d.heading ?? 0,
         flat: true,
         anchor: const Offset(0.5, 0.5),
-        icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         infoWindow: InfoWindow(title: widget.trip.driverName, snippet: widget.trip.vehicleLabel),
         zIndex: 3,
       ));
@@ -363,19 +305,19 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
       markers.add(Marker(
         markerId: MarkerId('passenger-${entry.key}'),
         position: LatLng(p.latitude, p.longitude),
-        icon: _passengerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         infoWindow: InfoWindow(title: _names[entry.key] ?? 'Passenger'),
         zIndex: 2,
       ));
     }
 
-    // My own position — drawn manually because the built-in
-    // my-location layer isn't supported on Flutter web.
+    // My own position (azure marker) — drawn manually because the
+    // built-in my-location layer isn't supported on Flutter web.
     if (_me != null) {
       markers.add(Marker(
         markerId: const MarkerId('me'),
         position: LatLng(_me!.latitude, _me!.longitude),
-        icon: _meIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         infoWindow: const InfoWindow(title: 'You'),
         zIndex: 1,
       ));
@@ -408,9 +350,9 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   Widget build(BuildContext context) {
     final trip = widget.trip;
 
-    // État terminal — remplace tout (carte + carte du bas) dès que le
-    // trajet est marqué terminé côté serveur. Commun aux deux rôles :
-    // plus aucune action de partage n'a de sens ici.
+    // ✅ NOUVEAU : état terminal — remplace tout (carte + carte du bas)
+    // dès que le trajet est marqué terminé côté serveur. Commun aux
+    // deux rôles : plus aucune action de partage n'a de sens ici.
     if (_tripEnded) {
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -513,7 +455,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
               setState(() => _follow = false);
             }
           },
-          myLocationEnabled: false, // manual marker instead (web support)
+          myLocationEnabled: false, // manual azure marker instead (web support)
           myLocationButtonEnabled: false,
           zoomControlsEnabled: false,
           mapToolbarEnabled: false,
