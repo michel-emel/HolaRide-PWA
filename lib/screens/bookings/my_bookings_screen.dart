@@ -26,6 +26,15 @@ import 'rebook_screen.dart';
 ///
 /// Guests (no account yet) see a login prompt here instead of an
 /// empty/erroring list — there's nothing to fetch without an account.
+///
+/// ✅ NOUVEAU : l'accès à [LiveTripScreen] (bannière verte + bouton
+/// "Track" dans le résumé) est maintenant STRICTEMENT conditionné à
+/// `trip.status == 'ongoing'`. Avant ce correctif, `trip.status`
+/// pouvait rester périmé (bug backend/parsing corrigé séparément dans
+/// `schemas.py` / `booking.dart`) — même corrigé côté données, on
+/// verrouille aussi ici pour qu'un trip `completed`, `cancelled` ou
+/// tout autre statut ne puisse plus jamais rouvrir la carte live,
+/// quelle que soit la source du problème.
 class MyBookingsScreen extends StatefulWidget {
   /// Bumped by MainTabScreen every time this tab is tapped, since this
   /// screen lives inside an IndexedStack and otherwise only ever loads
@@ -166,6 +175,14 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         .then((_) => _load());
   }
 
+  /// ✅ NOUVEAU : seul point de vérité pour "est-ce que la carte live
+  /// est accessible pour ce trip ?" — réutilisé partout (bannière,
+  /// bouton Track) pour ne jamais avoir deux logiques qui divergent.
+  bool _isLiveTrackable(Booking b) {
+    final trip = b.trip;
+    return trip != null && trip.status == 'ongoing';
+  }
+
   Future<void> _openBooking(Booking booking) async {
     if (booking.status == BookingStatus.pendingDriverAcceptance && booking.trip != null) {
       Navigator.of(context).push(
@@ -201,7 +218,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   void _showSummary(Booking booking) {
     final l = AppLocalizations.of(context);
     final trip = booking.trip;
+    // ✅ NOUVEAU : le chat reste ouvert pour paid/completed comme avant
+    // (discuter après coup reste utile), mais "Track" — l'accès à la
+    // carte live — ne dépend plus du statut du BOOKING : il dépend
+    // exclusivement du statut du TRIP, et seulement 'ongoing'.
     final canChat = booking.status == BookingStatus.paid || booking.status == BookingStatus.completed;
+    final canTrack = _isLiveTrackable(booking); // ✅ NOUVEAU
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -258,47 +280,55 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     ? l.bookingsSeatPlural(booking.seats)
                     : l.bookingsSeatSingular(booking.seats),
                 style: const TextStyle(color: AppColors.textSecondary)),
-            if (canChat && trip != null) ...[
+            // ✅ NOUVEAU : le Row Chat/Track ne se construit que si au
+            // moins l'un des deux boutons a une raison d'exister — sinon
+            // on se retrouve avec une rangée vide (ex: booking paid mais
+            // trip déjà completed entre-temps → canChat true, canTrack
+            // false → on ne montre plus que "Chat", plus jamais "Track").
+            if (trip != null && (canChat || canTrack)) ...[
               const SizedBox(height: 18),
               Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                ChatScreen(tripId: booking.tripId ?? trip.id),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                      label: Text(l.bookingsChat),
+                  if (canChat)
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ChatScreen(tripId: booking.tripId ?? trip.id),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                        label: Text(l.bookingsChat),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        // While the trip is ongoing, "Track" means the
-                        // real live map; otherwise fall back to the
-                        // plain trip detail as before.
-                        if (trip.status == 'ongoing') {
+                  if (canChat && canTrack) const SizedBox(width: 10),
+                  // ✅ NOUVEAU : "Track" ne s'affiche plus du tout si le
+                  // trip n'est pas 'ongoing' — avant, ce bouton existait
+                  // toujours pour paid/completed et redirigeait à tort
+                  // vers TripDetailScreen (ou pire, vers LiveTripScreen
+                  // si trip.status était resté périmé sur 'ongoing').
+                  // ✅ CORRIGÉ : `trip != null` répété ici (en plus de
+                  // canTrack) pour que Dart promeuve `trip` en non-nullable
+                  // dans ce bloc — `canTrack` seul ne suffit pas, le
+                  // compilateur ne peut pas savoir que _isLiveTrackable()
+                  // a déjà vérifié la nullité en interne.
+                  if (canTrack && trip != null)
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
                           Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => LiveTripScreen(trip: trip)),
                           );
-                        } else {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => TripDetailScreen(tripId: trip.id)),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.my_location, size: 18),
-                      label: Text(l.bookingsTrack),
+                        },
+                        icon: const Icon(Icons.my_location, size: 18),
+                        label: Text(l.bookingsTrack),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -423,7 +453,11 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           final isPast = !_upcomingStatuses.contains(b.status) 
           || b.status == BookingStatus.pendingPayment
           || b.status == BookingStatus.cancelled;
-          final isLive = b.status == BookingStatus.paid && trip != null && trip.status == 'ongoing';
+          // ✅ NOUVEAU : la bannière "Trip started — follow live" utilise
+          // désormais exactement la même règle que le bouton Track
+          // (_isLiveTrackable), donc plus jamais de divergence entre les
+          // deux points d'entrée vers LiveTripScreen.
+          final isLive = b.status == BookingStatus.paid && _isLiveTrackable(b);
           
           return Dismissible(
             key: Key(b.id),
@@ -526,8 +560,12 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     Text(_priceLabel(b.amountTotal),
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.primary)),
                   ]),
-                  // Live trip — follow the driver
-                  if (isLive) ...[
+                   // Track this trip — always available once paid, styled differently
+                  // once the trip is actually 'ongoing'. This gives the passenger a
+                  // reliable way into LiveTripScreen even if trip_status hasn't
+                  // propagated correctly yet — LiveTripScreen itself shows "Waiting
+                  // for signal..." gracefully when there's nothing to show.
+                  if (b.status == BookingStatus.paid && trip != null) ...[
                     const SizedBox(height: 10),
                     InkWell(
                       onTap: () => Navigator.of(context).push(
@@ -538,16 +576,24 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                         decoration: BoxDecoration(
-                          color: AppColors.successBg,
+                          color: isLive ? AppColors.successBg : AppColors.infoBg,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.success.withOpacity(.3)),
+                          border: Border.all(
+                            color: isLive ? AppColors.success.withOpacity(.3) : AppColors.primary.withOpacity(.2),
+                          ),
                         ),
-                        child: const Row(children: [
-                          Icon(Icons.gps_fixed, size: 15, color: AppColors.success),
-                          SizedBox(width: 8),
-                          Expanded(child: Text('Trip started — follow your driver live',
-                            style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700, fontSize: 12.5))),
-                          Icon(Icons.chevron_right, size: 16, color: AppColors.success),
+                        child: Row(children: [
+                          Icon(isLive ? Icons.gps_fixed : Icons.map_outlined, size: 15,
+                              color: isLive ? AppColors.success : AppColors.primary),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(
+                            isLive ? 'Trip started — follow your driver live' : 'View live map',
+                            style: TextStyle(
+                              color: isLive ? AppColors.success : AppColors.primary,
+                              fontWeight: FontWeight.w700, fontSize: 12.5,
+                            ),
+                          )),
+                          Icon(Icons.chevron_right, size: 16, color: isLive ? AppColors.success : AppColors.primary),
                         ]),
                       ),
                     ),

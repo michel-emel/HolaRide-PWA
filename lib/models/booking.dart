@@ -138,10 +138,26 @@ class Booking {
   /// a minimal [Trip] is built from those when present by reusing
   /// [Trip.fromJson] on the same map (with `id` corrected to the
   /// trip's own id, not the booking's).
+  ///
+  /// ✅ CORRIGÉ : `MyBookingOut` a DEUX champs de statut distincts —
+  /// `status` (celui du BOOKING : paid/completed/cancelled/...) et
+  /// `trip_status` (celui du TRIP : published/ongoing/completed/...).
+  /// Avant ce correctif, le spread `{...json, 'id': json['trip_id']}`
+  /// laissait passer `json['status']` (le statut du BOOKING) tel quel
+  /// vers `Trip.fromJson`, qui lit justement la clé `'status'` — donc
+  /// le Trip reconstruit héritait à tort du statut du booking. On
+  /// écrase maintenant explicitement `'status'` avec `trip_status`
+  /// avant de construire le Trip, pour que `trip.status` reflète le
+  /// vrai statut du trajet (c'est lui, et lui seul, qui détermine par
+  /// exemple si le partage de position live est encore possible).
   factory Booking.fromJson(Map<String, dynamic> json) {
     Trip? trip;
     if (json['departure_city'] != null && json['departure_date'] != null) {
-      trip = Trip.fromJson({...json, 'id': json['trip_id']});
+      trip = Trip.fromJson({
+        ...json,
+        'id': json['trip_id'],
+        'status': json['trip_status'], // ✅ NOUVEAU — voir doc ci-dessus
+      });
     }
 
     final firstName = json['passenger_first_name']?.toString();

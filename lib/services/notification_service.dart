@@ -33,4 +33,14 @@ class NotificationService {
   Future<void> markAllAsRead() async {
     await _api.patch('/me/notifications/read-all');
   }
+
+  /// `DELETE /me/notifications/{id}` — deletes a single notification.
+  Future<void> deleteNotification(String notificationId) async {
+    await _api.delete('/me/notifications/$notificationId');
+  }
+
+  /// `DELETE /me/notifications` — deletes every notification at once.
+  Future<void> deleteAllNotifications() async {
+    await _api.delete('/me/notifications');
+  }
 }

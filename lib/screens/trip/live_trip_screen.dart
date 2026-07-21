@@ -18,6 +18,19 @@ import '../../theme/app_colors.dart';
 /// The asymmetry isn't decided here: the RLS policies only ever send a
 /// passenger the driver's row — this screen just renders whatever
 /// arrives on the stream.
+///
+/// ✅ NOUVEAU (passager uniquement) :
+///  - un consentement explicite ("Partager" / "Suivre sans partager")
+///    est demandé avant de démarrer le service ;
+///  - un toggle dans la carte du bas permet de couper ou reprendre le
+///    partage à tout moment ;
+///  - dès que [LocationSharingService.tripEnded] émet (le backend a
+///    répondu 409 — le trip n'est plus "ongoing"), la carte est
+///    remplacée par un état "Trajet terminé" explicite, pour les DEUX
+///    rôles (driver et passager) : plus aucune tentative de partage
+///    n'a de sens une fois le trip complété.
+/// Le flux d'origine du driver (_init, _driverCard) est inchangé en
+/// dehors de ce nouvel état terminal partagé.
 class LiveTripScreen extends StatefulWidget {
   final Trip trip;
   const LiveTripScreen({super.key, required this.trip});
@@ -36,12 +49,18 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
 
   StreamSubscription<LivePosition>? _posSub;
   StreamSubscription<Position>? _meSub;
+  StreamSubscription<void>? _tripEndedSub; // ✅ NOUVEAU
   Timer? _ticker;
   Position? _me;
   bool _follow = true;
   bool _programmaticMove = false;
   bool _hadFix = false; // first GPS fix received → forces the initial zoom
   String? _permError;
+
+  // ✅ NOUVEAU : passe à true dès que le service signale la fin du
+  // trajet (409 côté backend). Remplace toute la zone carte + carte du
+  // bas par un état terminal simple.
+  bool _tripEnded = false;
 
   // Yaoundé — fallback center before the first position arrives.
   static const _fallbackCenter = LatLng(3.848, 11.502);
@@ -60,6 +79,21 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     _myId = user?.id;
     _isDriver = _myId != null && _myId == widget.trip.driverId;
 
+    // Consentement passager AVANT tout appel à _svc.start(). Le driver
+    // n'est jamais concerné par ce bloc (if (!_isDriver)).
+    bool shareLocation = true;
+    if (!_isDriver) {
+      final choice = await _showLocationConsentSheet(context);
+      if (!mounted) return;
+      if (choice == null) {
+        // Fermé sans choisir (back / tap en dehors) → on ne force rien,
+        // on quitte l'écran plutôt que de partager par défaut.
+        Navigator.of(context).pop();
+        return;
+      }
+      shareLocation = choice;
+    }
+
     // Driver view: map passenger ids to names for the pins.
     if (_isDriver) {
       try {
@@ -75,9 +109,29 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
       }
     }
 
+    // ✅ NOUVEAU : écouter le signal de fin de trajet, pour les DEUX
+    // rôles — si le driver ferme le trajet pendant que le passager est
+    // encore sur cet écran (ou vice-versa), les deux doivent voir le
+    // même état terminal, pas une carte qui continue de tourner à vide.
+    _tripEndedSub = _svc.tripEnded.listen((_) {
+      if (!mounted) return;
+      setState(() => _tripEnded = true);
+    });
+
     // Start upload + download for this trip.
-    _permError = await _svc.start(widget.trip.id);
+    // shareLocation vaut toujours true pour le driver, donc son
+    // comportement (upload immédiat) est strictement inchangé.
+    _permError = await _svc.start(widget.trip.id, shareLocation: shareLocation);
     if (!mounted) return;
+
+    // ✅ NOUVEAU : si le trajet était déjà terminé au moment où l'écran
+    // s'est ouvert (ex. ouverture tardive), refléter ça immédiatement
+    // plutôt que d'attendre un premier 409.
+    if (_svc.hasTripEnded) {
+      setState(() => _tripEnded = true);
+      return;
+    }
+
     if (_permError != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -137,9 +191,60 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     _ticker?.cancel();
     _posSub?.cancel();
     _meSub?.cancel();
+    _tripEndedSub?.cancel(); // ✅ NOUVEAU
     _svc.stop();
     _map?.dispose();
     super.dispose();
+  }
+
+  // Bottom sheet de consentement, passager uniquement. Retourne true
+  // (partager), false (suivre sans partager), ou null si fermée sans
+  // choix.
+  Future<bool?> _showLocationConsentSheet(BuildContext context) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.location_on, color: AppColors.primary, size: 32),
+            const SizedBox(height: 12),
+            const Text('Partager votre position',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+            const SizedBox(height: 8),
+            const Text(
+              'Pendant ce trajet, le conducteur pourra voir votre position en '
+              'direct. Vous pouvez désactiver le partage à tout moment depuis '
+              'l\'écran de suivi.',
+              style: TextStyle(fontSize: 13.5, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Suivre sans partager'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Partager'),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _moveCamera(LatLng target) async {
@@ -244,6 +349,64 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   @override
   Widget build(BuildContext context) {
     final trip = widget.trip;
+
+    // ✅ NOUVEAU : état terminal — remplace tout (carte + carte du bas)
+    // dès que le trajet est marqué terminé côté serveur. Commun aux
+    // deux rôles : plus aucune action de partage n'a de sens ici.
+    if (_tripEnded) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: Padding(
+            padding: const EdgeInsets.all(8),
+            child: InkWell(
+              onTap: () => Navigator.of(context).pop(),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.arrow_back, color: AppColors.primary, size: 20),
+              ),
+            ),
+          ),
+          title: Text('${trip.originCity} → ${trip.destinationCity}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(color: AppColors.successBg, shape: BoxShape.circle),
+                  child: const Icon(Icons.check_circle_outline, color: AppColors.success, size: 32),
+                ),
+                const SizedBox(height: 16),
+                const Text('Trajet terminé',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                const SizedBox(height: 6),
+                const Text(
+                  'Le partage de position a été arrêté automatiquement.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Retour'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final initialCenter = _driverPos != null
         ? LatLng(_driverPos!.latitude, _driverPos!.longitude)
         : (_me != null ? LatLng(_me!.latitude, _me!.longitude) : _fallbackCenter);
@@ -332,41 +495,87 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   Widget _passengerCard() {
     final trip = widget.trip;
     final label = _freshnessLabel;
-    return Row(children: [
-      Container(
-        width: 44, height: 44,
-        decoration: const BoxDecoration(color: AppColors.infoBg, shape: BoxShape.circle),
-        child: const Icon(Icons.directions_car, color: AppColors.primary, size: 22),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(trip.driverName,
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
-          Text(trip.vehicleLabel,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-        ]),
-      ),
-      if (label == null)
-        const Text('Waiting for signal...',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary))
-      else
-        Row(mainAxisSize: MainAxisSize.min, children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(children: [
           Container(
-            width: 8, height: 8,
-            decoration: BoxDecoration(
-              color: _isStale ? AppColors.danger : AppColors.success,
-              shape: BoxShape.circle,
-            ),
+            width: 44, height: 44,
+            decoration: const BoxDecoration(color: AppColors.infoBg, shape: BoxShape.circle),
+            child: const Icon(Icons.directions_car, color: AppColors.primary, size: 22),
           ),
-          const SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: _isStale ? AppColors.danger : AppColors.success)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(trip.driverName,
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
+              Text(trip.vehicleLabel,
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            ]),
+          ),
+          if (label == null)
+            const Text('Waiting for signal...',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary))
+          else
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                width: 8, height: 8,
+                decoration: BoxDecoration(
+                  color: _isStale ? AppColors.danger : AppColors.success,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(label,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: _isStale ? AppColors.danger : AppColors.success)),
+            ]),
         ]),
-    ]);
+
+        // Séparateur + toggle de partage, uniquement si la permission
+        // GPS a bien été obtenue (sinon rien à activer/couper).
+        if (_permError == null) ...[
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: 10),
+          Row(children: [
+            Icon(
+              _svc.isSharing ? Icons.my_location : Icons.location_off,
+              size: 16,
+              color: _svc.isSharing ? AppColors.primary : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _svc.isSharing
+                    ? 'Le conducteur voit votre position'
+                    : 'Partage désactivé',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: _svc.isSharing ? AppColors.textPrimary : AppColors.textSecondary,
+                ),
+              ),
+            ),
+            Switch(
+              value: _svc.isSharing,
+              activeColor: AppColors.primary,
+              onChanged: (v) async {
+                if (v) {
+                  _svc.resumeSharing();
+                } else {
+                  await _svc.pauseSharing();
+                }
+                if (mounted) setState(() {});
+              },
+            ),
+          ]),
+        ],
+      ],
+    );
   }
 
   Widget _driverCard() {

@@ -19,6 +19,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _loading = true;
   String? _error;
 
+  // ── Selection mode ──────────────────────────────────────────
+  bool _selectionMode = false;
+  final Set<String> _selectedIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +54,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _onTap(AppNotification notif) async {
+    if (_selectionMode) {
+      _toggleSelected(notif.id);
+      return;
+    }
     if (!notif.isRead) {
       NotificationService.instance.markAsRead(notif.id).catchError((_) {});
       setState(() {
@@ -89,6 +97,88 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       default:
         break;
     }
+  }
+
+  void _onLongPress(AppNotification notif) {
+    if (_selectionMode) return;
+    setState(() {
+      _selectionMode = true;
+      _selectedIds.add(notif.id);
+    });
+  }
+
+  void _toggleSelected(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) _selectionMode = false;
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _cancelSelection() {
+    setState(() {
+      _selectionMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  void _selectAll() {
+    setState(() {
+      _selectedIds
+        ..clear()
+        ..addAll(_notifications.map((n) => n.id));
+    });
+  }
+
+  void _unselectAll() {
+    setState(() => _selectedIds.clear());
+  }
+
+  Future<void> _deleteSelected() async {
+    final ids = _selectedIds.toList();
+    setState(() {
+      _notifications.removeWhere((n) => ids.contains(n.id));
+      _selectionMode = false;
+      _selectedIds.clear();
+    });
+    for (final id in ids) {
+      NotificationService.instance.deleteNotification(id).catchError((e) {
+        // ignore: avoid_print
+        print('Error in lib/screens/notifications/notifications_screen.dart: $e');
+      });
+    }
+  }
+
+  Future<void> _confirmDeleteSelected() async {
+    final count = _selectedIds.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Delete $count notification${count > 1 ? 's' : ''}?',
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: const Text('This cannot be undone.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await _deleteSelected();
   }
 
   String _timeAgo(DateTime t, AppLocalizations l) {
@@ -141,19 +231,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: buildAppHeader(
-        l.notificationsTitle,
-        showBackButton: true,
-        extraActions: unreadCount > 0
-            ? [
-                TextButton(
-                  onPressed: _markAllRead,
-                  child: Text(l.notificationsMarkRead,
-                      style: const TextStyle(color: AppColors.primary, fontSize: 13)),
-                ),
-              ]
-            : null,
-      ),
+      appBar: _selectionMode
+          ? _buildSelectionAppBar()
+          : buildAppHeader(
+              l.notificationsTitle,
+              showBackButton: true,
+              extraActions: unreadCount > 0
+                  ? [
+                      TextButton(
+                        onPressed: _markAllRead,
+                        child: Text(l.notificationsMarkRead,
+                            style: const TextStyle(color: AppColors.primary, fontSize: 13)),
+                      ),
+                    ]
+                  : null,
+            ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
           : _error != null
@@ -172,56 +264,130 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
+  AppBar _buildSelectionAppBar() {
+    final allSelected = _selectedIds.length == _notifications.length && _notifications.isNotEmpty;
+    return AppBar(
+      backgroundColor: AppColors.background,
+      foregroundColor: AppColors.textPrimary,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: _cancelSelection,
+      ),
+      title: Text('${_selectedIds.length} selected',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+      actions: [
+        TextButton(
+          onPressed: allSelected ? _unselectAll : _selectAll,
+          child: Text(allSelected ? 'Unselect all' : 'Select all',
+              style: const TextStyle(color: AppColors.primary, fontSize: 13)),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+          onPressed: _selectedIds.isEmpty ? null : _confirmDeleteSelected,
+        ),
+      ],
+    );
+  }
+
   Widget _buildItem(AppNotification n, AppLocalizations l) {
     final color = _colorFor(n.type);
     final isUnread = !n.isRead;
-    return InkWell(
-      onTap: () => _onTap(n),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isUnread ? AppColors.infoBg : AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isUnread ? AppColors.primary.withOpacity(0.2) : AppColors.border),
-          boxShadow: [BoxShadow(color: AppColors.textPrimary.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3))],
+    final isSelected = _selectedIds.contains(n.id);
+
+    final card = Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.primary.withOpacity(0.10)
+            : (isUnread ? AppColors.infoBg : AppColors.surface),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSelected
+              ? AppColors.primary
+              : (isUnread ? AppColors.primary.withOpacity(0.2) : AppColors.border),
+          width: isSelected ? 1.5 : 1,
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        boxShadow: [BoxShadow(color: AppColors.textPrimary.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 3))],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_selectionMode)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, right: 10),
+              child: Icon(
+                isSelected ? Icons.check_circle : Icons.circle_outlined,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary.withOpacity(0.4),
+                size: 22,
+              ),
+            )
+          else
             Container(
               width: 42, height: 42,
               decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
               child: Icon(_iconFor(n.type), color: color, size: 20),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Expanded(child: Text(n.title ?? n.type,
-                        style: TextStyle(fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600, fontSize: 14))),
-                    if (isUnread)
-                      Container(width: 8, height: 8,
-                          decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
-                  ]),
-                  if (n.body != null && n.body!.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(n.body!,
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.3)),
-                  ],
-                  const SizedBox(height: 6),
-                  Text(_timeAgo(n.createdAt, l),
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Expanded(child: Text(n.title ?? n.type,
+                      style: TextStyle(fontWeight: isUnread ? FontWeight.w800 : FontWeight.w600, fontSize: 14))),
+                  if (isUnread && !_selectionMode)
+                    Container(width: 8, height: 8,
+                        decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
+                ]),
+                if (n.body != null && n.body!.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(n.body!,
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.3)),
                 ],
-              ),
+                const SizedBox(height: 6),
+                Text(_timeAgo(n.createdAt, l),
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+              ],
             ),
+          ),
+          if (!_selectionMode) ...[
             const SizedBox(width: 4),
             const Icon(Icons.chevron_right, size: 16, color: AppColors.textSecondary),
           ],
-        ),
+        ],
       ),
+    );
+
+    final tappable = InkWell(
+      onTap: () => _onTap(n),
+      onLongPress: () => _onLongPress(n),
+      borderRadius: BorderRadius.circular(16),
+      child: card,
+    );
+
+    // Swipe-to-delete only makes sense outside selection mode.
+    if (_selectionMode) return tappable;
+
+    return Dismissible(
+      key: ValueKey(n.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(color: AppColors.danger, borderRadius: BorderRadius.circular(16)),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
+      ),
+      onDismissed: (_) {
+        final removed = n;
+        setState(() => _notifications.removeWhere((x) => x.id == n.id));
+        NotificationService.instance.deleteNotification(removed.id).catchError((e) {
+          // ignore: avoid_print
+          print('Error in lib/screens/notifications/notifications_screen.dart: $e');
+        });
+      },
+      child: tappable,
     );
   }
 
