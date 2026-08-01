@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/api_client.dart';
 import '../../services/session_service.dart';
 import '../../services/vehicle_service.dart';
@@ -57,7 +58,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
 
   Future<void> _submit() async {
     if (!_isValid) {
-      setState(() => _error = 'Fill in brand, model, plate number, and seats.');
+      setState(() => _error = AppLocalizations.of(context).vehicleRegValidationError);
       return;
     }
     setState(() {
@@ -86,7 +87,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     } catch (e, stack) {
       // ignore: avoid_print
       print('Vehicle submission failed (non-API error): $e\n$stack');
-      setState(() => _error = 'Could not submit your vehicle. Try again.');
+      setState(() => _error = AppLocalizations.of(context).vehicleRegSubmitError);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -104,10 +105,11 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Add your vehicle'),
+        title: Text(l.vehicleRegTitle),
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -124,10 +126,10 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                 child: const Icon(Icons.directions_car, color: AppColors.primary, size: 22),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Tell us about your car — this is what gets reviewed before you can publish trips.',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.4),
+                  l.vehicleRegSubtitle,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.4),
                 ),
               ),
             ],
@@ -146,29 +148,29 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Vehicle details',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
+                Text(l.vehicleRegDetails,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _field('Brand', _brandController, hint: 'e.g. Toyota')),
+                    Expanded(child: _field(l.vehicleRegBrand, _brandController, hint: l.vehicleRegBrandHint)),
                     const SizedBox(width: 12),
-                    Expanded(child: _field('Model', _modelController, hint: 'e.g. Corolla')),
+                    Expanded(child: _field(l.vehicleRegModel, _modelController, hint: l.vehicleRegModelHint)),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                      child: _field('Year (optional)', _yearController,
-                          hint: 'e.g. 2018', keyboardType: TextInputType.number, maxLength: 4),
+                      child: _field(l.vehicleRegYear, _yearController,
+                          hint: l.vehicleRegYearHint, keyboardType: TextInputType.number, maxLength: 4),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(child: _field('Color (optional)', _colorController, hint: 'e.g. Silver')),
+                    Expanded(child: _field(l.vehicleRegColor, _colorController, hint: l.vehicleRegColorHint)),
                   ],
                 ),
                 const SizedBox(height: 12),
-                _field('License plate', _plateController, hint: 'e.g. CMR-123-AA'),
+                _field(l.vehicleRegPlate, _plateController, hint: l.vehicleRegPlateHint),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -177,8 +179,8 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                     children: [
                       const Icon(Icons.event_seat_outlined, size: 18, color: AppColors.primary),
                       const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text('Total seats', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Expanded(
+                        child: Text(l.vehicleRegSeats, style: const TextStyle(fontWeight: FontWeight.w600)),
                       ),
                       IconButton(
                         onPressed: _totalSeats > 1 ? () => setState(() => _totalSeats--) : null,
@@ -203,7 +205,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                   ),
                 ],
                 const SizedBox(height: 22),
-                PrimaryButton(label: 'Submit for Review', onPressed: _submit, loading: _submitting),
+                PrimaryButton(label: l.vehicleRegSubmit, onPressed: _submit, loading: _submitting),
               ],
             ),
           ),

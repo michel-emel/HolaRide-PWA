@@ -4,6 +4,8 @@ import '../../services/trip_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/trip_card.dart';
 import '../../widgets/profile_icon_button.dart';
+import '../../l10n/app_localizations.dart';
+import '../../utils/date_labels.dart';
 import '../trip/trip_detail_screen.dart';
 
 enum _SortBy { time, price }
@@ -60,7 +62,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       print('Error in lib/screens/search/search_results_screen.dart: $e');
       if (!mounted) return;
       setState(() {
-        _error = "Couldn't load trips. Pull down to try again.";
+        _error = AppLocalizations.of(context).searchLoadError;
         _loading = false;
       });
     }
@@ -77,14 +79,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   String get _dateLabel {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${widget.date.day} ${months[widget.date.month - 1]} ${widget.date.year}';
+    return '${widget.date.day} ${monthAbbrev(context, widget.date.month)} ${widget.date.year}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -102,7 +102,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '$_dateLabel · ${widget.passengers} passenger${widget.passengers > 1 ? 's' : ''}',
+                  '$_dateLabel · ${widget.passengers} ${widget.passengers > 1 ? l.searchResultsPassengerPlural : l.searchResultsPassengerSingular}',
                   style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                 ),
                 PopupMenuButton<_SortBy>(
@@ -111,16 +111,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   child: Row(
                     children: [
                       Text(
-                        _sortBy == _SortBy.time ? 'Time' : 'Price',
+                        _sortBy == _SortBy.time ? l.searchTimeLabel : l.searchPriceLabel,
                         style: const TextStyle(
                             color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                       const Icon(Icons.arrow_drop_down, color: AppColors.primary, size: 18),
                     ],
                   ),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: _SortBy.time, child: Text('Sort by time')),
-                    PopupMenuItem(value: _SortBy.price, child: Text('Sort by price')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: _SortBy.time, child: Text(l.searchSortTime)),
+                    PopupMenuItem(value: _SortBy.price, child: Text(l.searchSortPrice)),
                   ],
                 ),
               ],
@@ -153,15 +153,15 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       return RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          children: const [
-            SizedBox(height: 80),
+          children: [
+            const SizedBox(height: 80),
             Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32),
+                padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Text(
-                  'No trips on this route and date yet. Try another date, or be among our first riders to request it.',
+                  AppLocalizations.of(context).searchNoResults,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary),
+                  style: const TextStyle(color: AppColors.textSecondary),
                 ),
               ),
             ),

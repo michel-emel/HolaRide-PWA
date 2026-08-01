@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/user.dart';
 import '../../services/api_client.dart';
 import '../../services/auth_service.dart';
@@ -23,9 +24,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _error;
 
   Future<void> _save() async {
+    final l = AppLocalizations.of(context);
     final name = _controller.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'Enter a name.');
+      setState(() => _error = l.editProfileErrorName);
       return;
     }
     setState(() {
@@ -44,7 +46,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/profile/edit_profile_screen.dart: $e');
-      setState(() => _error = 'Could not save your changes. Try again.');
+      setState(() => _error = l.editProfileSaveError);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -58,20 +60,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Edit profile')),
+      appBar: AppBar(title: Text(l.editProfileTitle)),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Name', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+            Text(l.editProfileName, style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
             const SizedBox(height: 6),
             TextField(
               controller: _controller,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(hintText: 'Your name'),
+              decoration: InputDecoration(hintText: l.editProfileNameHint),
               onChanged: (_) => setState(() => _error = null),
             ),
             const SizedBox(height: 16),
@@ -89,8 +92,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Phone number',
-                            style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                        Text(l.editProfilePhone,
+                            style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
                         Text(widget.user.phone, style: const TextStyle(fontWeight: FontWeight.w600)),
                       ],
                     ),
@@ -104,7 +107,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Text(_error!, style: const TextStyle(color: AppColors.danger, fontSize: 13)),
             ],
             const SizedBox(height: 22),
-            PrimaryButton(label: 'Save changes', onPressed: _save, loading: _saving),
+            PrimaryButton(label: l.editProfileSave, onPressed: _save, loading: _saving),
           ],
         ),
       ),

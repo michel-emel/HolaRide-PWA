@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../models/trip.dart';
 import '../theme/app_colors.dart';
 
@@ -32,6 +33,7 @@ class TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -110,11 +112,11 @@ class TripCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('${_priceLabel(trip.pricePerSeat)}/seat',
+                    Text('${_priceLabel(trip.pricePerSeat)}/${l.tripDetailSeat}',
                         style: const TextStyle(
                             fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primary)),
                     Text(
-                      '${trip.seatsAvailable} seats left',
+                      '${trip.seatsAvailable} ${l.widgetSeatsLeft}',
                       style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
                     ),
                   ],

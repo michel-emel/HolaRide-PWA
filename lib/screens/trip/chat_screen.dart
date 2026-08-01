@@ -4,12 +4,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:url_launcher/url_launcher.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/chat_message.dart';
 import '../../models/trip.dart';
 import '../../services/chat_service.dart';
 import '../../services/session_service.dart';
 import '../../services/trip_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/date_labels.dart';
 import '../../widgets/profile_icon_button.dart';
 
 /// Screen 23 — Chat (unlocked after a booking is paid).
@@ -142,7 +144,7 @@ class _ChatScreenState extends State<ChatScreen> {
       print('Error in lib/screens/trip/chat_screen.dart: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Message didn\'t send. Try again.')),
+        SnackBar(content: Text(AppLocalizations.of(context).chatSendError)),
       );
       _textController.text = text;
     } finally {
@@ -171,7 +173,7 @@ class _ChatScreenState extends State<ChatScreen> {
       print('Error in lib/screens/trip/chat_screen.dart: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not get your location. Check permissions and try again.')),
+        SnackBar(content: Text(AppLocalizations.of(context).chatLocationError)),
       );
     } finally {
       if (mounted) setState(() => _sharingLocation = false);
@@ -188,7 +190,7 @@ class _ChatScreenState extends State<ChatScreen> {
       print('Error in lib/screens/trip/chat_screen.dart: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open maps. Make sure Google Maps (or a browser) is installed.')),
+        SnackBar(content: Text(AppLocalizations.of(context).chatMapsError)),
       );
     }
   }
@@ -196,16 +198,17 @@ class _ChatScreenState extends State<ChatScreen> {
   bool get _isReadOnly => _trip != null && (_trip!.status == 'completed' || _trip!.status == 'cancelled');
 
   Future<void> _deleteMessage(ChatMessage m) async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete this message?'),
-        content: const Text('This only deletes it for everyone in this chat — it can\'t be undone.'),
+        title: Text(l.chatDeleteMsgTitle),
+        content: Text(l.chatDeleteMsgBody),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l.cancel)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child: Text(l.delete, style: const TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -219,25 +222,23 @@ class _ChatScreenState extends State<ChatScreen> {
       print('Error in lib/screens/trip/chat_screen.dart: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not delete this message. Try again.')),
+        SnackBar(content: Text(AppLocalizations.of(context).chatDeleteMsgError)),
       );
     }
   }
 
   Future<void> _hideChat() async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Delete this chat?'),
-        content: const Text(
-          'This removes it from your own list only — the other side keeps their conversation '
-          'as normal. If a new message comes in later, it\'ll reappear in your list.',
-        ),
+        title: Text(l.chatInboxDeleteTitle),
+        content: Text(l.chatHideChatBody),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l.cancel)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child: Text(l.delete, style: const TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -252,7 +253,7 @@ class _ChatScreenState extends State<ChatScreen> {
       print('Error in lib/screens/trip/chat_screen.dart: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not delete this chat. Try again.')),
+        SnackBar(content: Text(l.chatHideChatError)),
       );
     }
   }
@@ -261,10 +262,7 @@ class _ChatScreenState extends State<ChatScreen> {
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   String _dateLabel(DateTime t) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${t.day} ${months[t.month - 1]} · ${_timeLabel(t)}';
+    return '${t.day} ${monthAbbrev(context, t.month)} · ${_timeLabel(t)}';
   }
 
   @override
@@ -278,6 +276,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final trip = _trip;
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -286,7 +285,7 @@ class _ChatScreenState extends State<ChatScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: trip == null
-            ? const Text('Trip chat', style: TextStyle(fontSize: 16))
+            ? Text(l.chatTripTitle, style: const TextStyle(fontSize: 16))
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -307,7 +306,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
         actions: [
           IconButton(
-            tooltip: 'Delete chat',
+            tooltip: l.chatDeleteChat,
             icon: const Icon(Icons.delete_outline, color: AppColors.danger),
             onPressed: _hideChat,
           ),
@@ -320,9 +319,9 @@ class _ChatScreenState extends State<ChatScreen> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
                 : _messages.isEmpty
-                    ? const Center(
-                        child: Text('No messages yet — say hello!',
-                            style: TextStyle(color: AppColors.textSecondary)))
+                    ? Center(
+                        child: Text(l.chatNoMessages,
+                            style: const TextStyle(color: AppColors.textSecondary)))
                     : ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.all(16),
@@ -367,7 +366,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                     const Icon(Icons.block, size: 14, color: AppColors.textSecondary),
                                     const SizedBox(width: 6),
                                     Text(
-                                      mine ? 'You deleted this message' : 'This message was deleted',
+                                      mine ? l.chatDeletedByYou : l.chatDeleted,
                                       style: const TextStyle(
                                           color: AppColors.textSecondary, fontStyle: FontStyle.italic, fontSize: 12.5),
                                     ),
@@ -508,8 +507,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         Flexible(
                           child: Text(
                             _trip!.status == 'cancelled'
-                                ? 'Trip cancelled — chat is now read-only.'
-                                : 'Trip completed — chat is now read-only.',
+                                ? l.chatReadOnlyCancelled
+                                : l.chatReadOnlyCompleted,
                             style: TextStyle(
                               color: _trip!.status == 'cancelled'
                                   ? AppColors.danger
@@ -527,7 +526,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Row(
                       children: [
                         IconButton(
-                          tooltip: 'Share location',
+                          tooltip: l.chatShareLocation,
                           onPressed: _sharingLocation ? null : _shareLocation,
                           icon: _sharingLocation
                               ? const SizedBox(
@@ -539,7 +538,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             controller: _textController,
                             textInputAction: TextInputAction.send,
                             onSubmitted: (_) => _send(),
-                            decoration: const InputDecoration(hintText: 'Type a message...'),
+                            decoration: InputDecoration(hintText: l.chatTypePlaceholder),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -582,14 +581,14 @@ class _LocationPreviewCard extends StatelessWidget {
       // showing a broken/blank map area.
       return InkWell(
         onTap: onTap,
-        child: const Padding(
-          padding: EdgeInsets.fromLTRB(14, 10, 14, 10),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
           child: Row(
             children: [
-              Icon(Icons.location_on, color: AppColors.primary, size: 18),
-              SizedBox(width: 6),
-              Text('Shared location · Tap to open',
-                  style: TextStyle(
+              const Icon(Icons.location_on, color: AppColors.primary, size: 18),
+              const SizedBox(width: 6),
+              Text(AppLocalizations.of(context).chatSharedLocation,
+                  style: const TextStyle(
                       color: AppColors.primary, fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
             ],
           ),

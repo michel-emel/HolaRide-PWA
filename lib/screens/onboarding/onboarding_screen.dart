@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../l10n/app_localizations.dart';
 import '../splash_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -39,6 +40,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final top    = MediaQuery.of(context).padding.top;
     final bottom = MediaQuery.of(context).padding.bottom;
 
@@ -61,8 +63,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           top: top + 16, right: 20,
           child: GestureDetector(
             onTap: _finish,
-            child: const Text('Skip',
-                style: TextStyle(color: Colors.white, fontSize: 15,
+            child: Text(l.onboardingSkip,
+                style: const TextStyle(color: Colors.white, fontSize: 15,
                     fontWeight: FontWeight.w600)),
           ),
         ),
@@ -101,7 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           borderRadius: BorderRadius.circular(14)),
                     ),
                     child: Text(
-                      _page == 0 ? 'Get Started' : (_page == 1 ? 'Next' : "Let's Go!"),
+                      _page == 0 ? l.homeGetStarted : (_page == 1 ? l.onboardingNext : l.onboardingLetsGo),
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                     ),
                   )),
@@ -121,32 +123,33 @@ class _BottomContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     switch (page) {
       case 0:
-        return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: const [
-          _Feat(Icons.verified_user_outlined, 'Safe & Trusted', 'Verified drivers\n& secure payments'),
-          _Feat(Icons.people_outline, 'Find or Share', 'Choose your trip\nor offer seats'),
-          _Feat(Icons.wallet_outlined, 'Affordable', 'Better prices\nfor every journey'),
+        return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          _Feat(Icons.verified_user_outlined, l.onboardingFeatSafeTitle, l.onboardingFeatSafeSub),
+          _Feat(Icons.people_outline, l.onboardingFeatShareTitle, l.onboardingFeatShareSub),
+          _Feat(Icons.wallet_outlined, l.onboardingFeatAffordableTitle, l.onboardingFeatAffordableSub),
         ]);
       case 1:
-        return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: const [
-          _Feat(Icons.map_outlined, 'Many routes', 'Across Cameroon'),
-          _Feat(Icons.wallet_outlined, 'Great prices', 'No hidden fees'),
-          _Feat(Icons.bolt_outlined, 'Quick booking', 'In a few taps'),
+        return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          _Feat(Icons.map_outlined, l.onboardingFeatRoutesTitle, l.onboardingFeatRoutesSub),
+          _Feat(Icons.wallet_outlined, l.onboardingFeatPricesTitle, l.onboardingFeatPricesSub),
+          _Feat(Icons.bolt_outlined, l.onboardingFeatBookingTitle, l.onboardingFeatBookingSub),
         ]);
       default:
-        return Column(children: const [
-          _FeatRow(Icons.lock_outline, 'Secure Payments', 'Your money is protected'),
-          SizedBox(height: 10),
-          _FeatRow(Icons.location_on_outlined, 'Live Trip Tracking', 'Follow your trip in real time'),
-          SizedBox(height: 10),
-          _FeatRow(Icons.headset_mic_outlined, '24/7 Support', 'We\'re here to help anytime'),
-          SizedBox(height: 16),
+        return Column(children: [
+          _FeatRow(Icons.lock_outline, l.onboardingFeatPaymentsTitle, l.onboardingFeatPaymentsSub),
+          const SizedBox(height: 10),
+          _FeatRow(Icons.location_on_outlined, l.onboardingFeatTrackingTitle, l.onboardingFeatTrackingSub),
+          const SizedBox(height: 10),
+          _FeatRow(Icons.headset_mic_outlined, l.onboardingFeatSupportTitle, l.onboardingFeatSupportSub),
+          const SizedBox(height: 16),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.favorite, color: Colors.white70, size: 13),
-            SizedBox(width: 6),
-            Text('Building a connected Cameroon, one ride at a time.',
-              style: TextStyle(color: Colors.white70, fontSize: 12,
+            const Icon(Icons.favorite, color: Colors.white70, size: 13),
+            const SizedBox(width: 6),
+            Text(l.onboardingFooterTagline,
+              style: const TextStyle(color: Colors.white70, fontSize: 12,
                   fontWeight: FontWeight.w500)),
           ]),
         ]);
@@ -209,6 +212,7 @@ class _Page1Content extends StatelessWidget {
   const _Page1Content();
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final top = MediaQuery.of(context).padding.top;
     return Stack(fit: StackFit.expand, children: [
       Image.asset('assets/images/splash_bg.jpg', fit: BoxFit.cover),
@@ -227,26 +231,26 @@ class _Page1Content extends StatelessWidget {
           child: const Center(child: Text('H',
               style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Color(0xFF1B5E20))))),
         const SizedBox(height: 10),
-        const Text('HolaRide',
-          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -.3)),
-        const Text('Share the ride. Go further.',
-          style: TextStyle(color: Colors.white60, fontSize: 13, fontWeight: FontWeight.w500)),
+        Text(l.onboardingBrandName,
+          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -.3)),
+        Text(l.onboardingTagline,
+          style: const TextStyle(color: Colors.white60, fontSize: 13, fontWeight: FontWeight.w500)),
         const SizedBox(height: 32),
         // Title
         Padding(padding: const EdgeInsets.symmetric(horizontal: 28), child: Column(children: [
-          RichText(textAlign: TextAlign.center, text: const TextSpan(
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, height: 1.2,
+          RichText(textAlign: TextAlign.center, text: TextSpan(
+            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, height: 1.2,
               shadows: [Shadow(color: Color(0x880A1628), blurRadius: 8)]),
             children: [
-              TextSpan(text: 'Intercity travel,\n', style: TextStyle(color: Colors.white)),
-              TextSpan(text: 'smarter ', style: TextStyle(color: Color(0xFFFFCC02))),
-              TextSpan(text: 'together', style: TextStyle(color: Colors.white)),
+              TextSpan(text: l.onboardingPage1TitleLine1, style: const TextStyle(color: Colors.white)),
+              TextSpan(text: l.onboardingPage1TitleAccent, style: const TextStyle(color: Color(0xFFFFCC02))),
+              TextSpan(text: l.onboardingPage1TitleSuffix, style: const TextStyle(color: Colors.white)),
             ],
           )),
           const SizedBox(height: 12),
-          const Text('Book a seat or offer a ride to your\nfavorite cities in Cameroon.\nSafe, affordable and reliable.',
+          Text(l.onboardingPage1Body,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 13.5, height: 1.5,
+            style: const TextStyle(color: Colors.white70, fontSize: 13.5, height: 1.5,
               shadows: [Shadow(color: Color(0x660A1628), blurRadius: 4)])),
         ])),
       ]),
@@ -258,6 +262,7 @@ class _Page2Content extends StatelessWidget {
   const _Page2Content();
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final top = MediaQuery.of(context).padding.top;
     return Stack(fit: StackFit.expand, children: [
       Image.asset('assets/images/onboard_1.png', fit: BoxFit.cover),
@@ -269,18 +274,18 @@ class _Page2Content extends StatelessWidget {
       Column(children: [
         SizedBox(height: top + 60),
         Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Column(children: [
-          RichText(textAlign: TextAlign.center, text: const TextSpan(
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, height: 1.2,
+          RichText(textAlign: TextAlign.center, text: TextSpan(
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, height: 1.2,
               shadows: [Shadow(color: Color(0x880A1628), blurRadius: 8)]),
             children: [
-              TextSpan(text: 'Find the right ride\nfor ', style: TextStyle(color: Colors.white)),
-              TextSpan(text: 'your journey', style: TextStyle(color: Color(0xFFFFCC02))),
+              TextSpan(text: l.onboardingPage2TitlePrefix, style: const TextStyle(color: Colors.white)),
+              TextSpan(text: l.onboardingPage2TitleAccent, style: const TextStyle(color: Color(0xFFFFCC02))),
             ],
           )),
           const SizedBox(height: 10),
-          const Text('Search trips between cities, compare options,\ncheck driver profiles and book your seat\nin just a few taps.',
+          Text(l.onboardingPage2Body,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5,
+            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5,
               shadows: [Shadow(color: Color(0x660A1628), blurRadius: 4)])),
         ])),
       ]),
@@ -292,6 +297,7 @@ class _Page3Content extends StatelessWidget {
   const _Page3Content();
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final top = MediaQuery.of(context).padding.top;
     return Stack(fit: StackFit.expand, children: [
       Image.asset('assets/images/onboard_2.png', fit: BoxFit.cover),
@@ -303,18 +309,18 @@ class _Page3Content extends StatelessWidget {
       Column(children: [
         SizedBox(height: top + 60),
         Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: Column(children: [
-          RichText(textAlign: TextAlign.center, text: const TextSpan(
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, height: 1.2),
+          RichText(textAlign: TextAlign.center, text: TextSpan(
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, height: 1.2),
             children: [
-              TextSpan(text: 'Travel with ', style: TextStyle(color: Colors.white)),
-              TextSpan(text: 'peace\n', style: TextStyle(color: Color(0xFFFFCC02))),
-              TextSpan(text: 'of mind', style: TextStyle(color: Colors.white)),
+              TextSpan(text: l.onboardingPage3TitlePrefix, style: const TextStyle(color: Colors.white)),
+              TextSpan(text: l.onboardingPage3TitleAccent, style: const TextStyle(color: Color(0xFFFFCC02))),
+              TextSpan(text: l.onboardingPage3TitleSuffix, style: const TextStyle(color: Colors.white)),
             ],
           )),
           const SizedBox(height: 10),
-          const Text('Live trip tracking, secure payments and\n24/7 support — we\'ve got you covered\nevery step of the way.',
+          Text(l.onboardingPage3Body,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5)),
+            style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5)),
         ])),
         const SizedBox(height: 200),
       ]),

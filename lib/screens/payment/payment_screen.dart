@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../services/payment_service.dart';
 import '../../services/api_client.dart';
 import '../../services/session_service.dart';
+import '../../l10n/app_localizations.dart';
 import '../main_tab_screen.dart';
 
 // ── Operator helpers ─────────────────────────────────────────────
@@ -83,6 +84,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final ctrl = TextEditingController(text: current);
     String? error;
 
+    final l = AppLocalizations.of(context);
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -96,11 +98,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Pay with a different number',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              Text(l.paymentChangeNumberTitle,
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
               const SizedBox(height: 6),
-              const Text('The Mobile Money prompt will be sent to this number.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              Text(l.paymentChangeNumberBody,
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
               const SizedBox(height: 16),
               Container(
                 height: 56,
@@ -130,8 +132,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       autofocus: true,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: .5),
-                      decoration: const InputDecoration(
-                        hintText: '675 123 456',
+                      decoration: InputDecoration(
+                        hintText: l.paymentChangeNumberHint,
                         counterText: '',
                         border: InputBorder.none,
                         isDense: true,
@@ -153,7 +155,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   onPressed: () {
                     final d = ctrl.text.trim();
                     if (d.length != 9 || !d.startsWith(RegExp(r'[6][0-9]'))) {
-                      setSheet(() => error = 'Enter a valid 9-digit number starting with 6.');
+                      setSheet(() => error = l.paymentChangeNumberError);
                       return;
                     }
                     Navigator.of(ctx).pop('+237$d');
@@ -163,7 +165,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
-                  child: const Text('Use this number', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  child: Text(l.paymentUseThisNumber, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
               ),
             ],
@@ -211,6 +213,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -227,7 +230,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
         ),
-        title: const Text('Payment', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+        title: Text(l.paymentTitle, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -250,7 +253,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(_opName,
                           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: _opDark)),
-                      Text('Auto-detected from your number',
+                      Text(l.paymentAutoDetected,
                           style: TextStyle(fontSize: 11.5, color: _opDark.withOpacity(.7))),
                     ]),
                   ),
@@ -294,8 +297,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                 // Amount
                 Column(children: [
-                  const Text('Amount due',
-                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w700)),
+                  Text(l.paymentAmountDue,
+                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   Text(_fmtXaf(_amountDue), style: const TextStyle(
                     fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w900,
@@ -305,11 +308,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(20)),
-                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.shield_outlined, size: 13, color: AppColors.primary),
-                      SizedBox(width: 5),
-                      Text('Fees: 2% included',
-                          style: TextStyle(fontSize: 11.5, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.shield_outlined, size: 13, color: AppColors.primary),
+                      const SizedBox(width: 5),
+                      Text(l.paymentFees,
+                          style: const TextStyle(fontSize: 11.5, color: AppColors.primary, fontWeight: FontWeight.w600)),
                     ]),
                   ),
                 ]),
@@ -328,8 +331,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('Phone number',
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      Text(l.paymentPhone,
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                       const SizedBox(height: 2),
                       Text(_payPhone ?? '—',
                           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
@@ -349,7 +352,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       minimumSize: const Size(0, 40),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('Change', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                    child: Text(l.searchChange, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
                   ),
                 ]),
               ]),
@@ -371,15 +374,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   child: const Icon(Icons.smartphone_outlined, size: 19, color: AppColors.primary),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: Text.rich(TextSpan(
-                  text: "You'll receive a $_opName prompt on ",
+                Expanded(child: Text(
+                  l.paymentPrompt(_opName, _payPhone ?? ''),
                   style: const TextStyle(fontSize: 13, color: AppColors.primary, height: 1.45),
-                  children: [
-                    TextSpan(text: '${_payPhone ?? ''}.',
-                        style: const TextStyle(fontWeight: FontWeight.w800)),
-                    const TextSpan(text: '\nConfirm on your phone to complete the payment.'),
-                  ],
-                ))),
+                )),
               ]),
             ),
 
@@ -402,7 +400,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   const Icon(Icons.lock_outline, size: 18),
                   const SizedBox(width: 10),
-                  Text('Pay ${_fmtXaf(_amountDue)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  Text(l.paymentPay(_fmtXaf(_amountDue)), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                 ]),
               ),
             ),
@@ -415,7 +413,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => _openPaymentOverlay(simulate: true),
                 icon: const Icon(Icons.science_outlined, size: 15),
-                label: const Text('Simulate Payment (dev only)', style: TextStyle(fontSize: 13)),
+                label: Text(l.paymentSimulate, style: const TextStyle(fontSize: 13)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.orange.shade700,
                   side: BorderSide(color: Colors.orange.shade200),
@@ -497,6 +495,7 @@ class _PaymentProgressSheetState extends State<_PaymentProgressSheet>
   }
 
   Future<void> _start() async {
+    final l = AppLocalizations.of(context);
     setState(() { _step = _SheetStep.initiating; _errorMessage = ''; _insufficient = false; });
     try {
       if (widget.simulate) {
@@ -523,11 +522,11 @@ try {
       if (result.status == 'failed') {
         switch (result.failureReason) {
           case 'insufficient_balance':
-            _showFailure('Your $_opName balance is too low for ${widget.amountLabel}.', insufficient: true);
+            _showFailure(l.paymentInsufficientMsg(_opName, widget.amountLabel), insufficient: true);
           case 'user_cancelled':
-            _showFailure('You cancelled the payment on your phone.');
+            _showFailure(l.paymentUserCancelled);
           default:
-            _showFailure(result.errorMessage ?? 'Payment failed. Please try again.');
+            _showFailure(result.errorMessage ?? l.paymentFailedGeneric);
         }
         return;
       }
@@ -544,12 +543,13 @@ try {
     } on ApiException catch (e) {
       _showFailure(e.message);
     } catch (_) {
-      _showFailure('Could not reach the payment provider. Try again.');
+      _showFailure(l.paymentProviderUnreachable);
     }
   }
 
 Future<void> _doPoll() async {
     if (!mounted || _step != _SheetStep.pending) return;
+    final l = AppLocalizations.of(context);
     try {
       final result = await PaymentService.instance.getPaymentStatus(widget.booking.id);
       if (!mounted) return;
@@ -560,17 +560,18 @@ Future<void> _doPoll() async {
         _pollTimer?.cancel(); _countdownTimer?.cancel();
         switch (result.failureReason) {
           case 'insufficient_balance':
-            _showFailure('Your $_opName balance is too low for ${widget.amountLabel}.', insufficient: true);
+            _showFailure(l.paymentInsufficientMsg(_opName, widget.amountLabel), insufficient: true);
           case 'user_cancelled':
-            _showFailure('You cancelled the payment on your phone.');
+            _showFailure(l.paymentUserCancelled);
           default:
-            _showFailure(result.errorMessage ?? 'Payment failed. Please try again.');
+            _showFailure(result.errorMessage ?? l.paymentFailedGeneric);
         }
       }
     } catch (_) {}
   }
   
   void _startPolling() {
+    final l = AppLocalizations.of(context);
     _pollCount = 0;
     // First poll after 2s to quickly detect insufficient balance
     Future.delayed(const Duration(seconds: 2), () => _doPoll());
@@ -587,16 +588,16 @@ Future<void> _doPoll() async {
           _pollTimer?.cancel(); _countdownTimer?.cancel();
           switch (result.failureReason) {
             case 'insufficient_balance':
-              _showFailure('Your $_opName balance is too low for ${widget.amountLabel}.',
+              _showFailure(l.paymentInsufficientMsg(_opName, widget.amountLabel),
                   insufficient: true);
             case 'user_cancelled':
-              _showFailure('You cancelled the payment on your phone.');
+              _showFailure(l.paymentUserCancelled);
             default:
-              _showFailure(result.errorMessage ?? 'Payment failed. Please try again.');
+              _showFailure(result.errorMessage ?? l.paymentFailedGeneric);
           }
         } else if (_pollCount >= _maxPolls) {
           _pollTimer?.cancel(); _countdownTimer?.cancel();
-          _showFailure('Payment timed out. Please try again.');
+          _showFailure(l.paymentTimeout);
         }
       } catch (_) {
         // Transient network hiccup — retry on next tick.
@@ -660,6 +661,7 @@ Future<void> _doPoll() async {
   }
 
   List<Widget> _content() {
+    final l = AppLocalizations.of(context);
     switch (_step) {
 
       // ── INITIATING ──────────────────────────────────────────────
@@ -671,10 +673,10 @@ Future<void> _doPoll() async {
             child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
           ),
           const SizedBox(height: 24),
-          const Text('Initiating payment...',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
+          Text(l.paymentConnecting,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: AppColors.textPrimary)),
           const SizedBox(height: 6),
-          Text('Connecting to $_opName',
+          Text(l.paymentPleaseWait,
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 13.5)),
           const SizedBox(height: 20),
         ];
@@ -695,13 +697,13 @@ Future<void> _doPoll() async {
             ),
           ),
           const SizedBox(height: 22),
-          const Text('Check your phone', style: TextStyle(
+          Text(l.paymentCheckPhone, style: const TextStyle(
             fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w800,
             fontSize: 22, color: AppColors.textPrimary,
           )),
           const SizedBox(height: 8),
           Text(
-            'A $_opName payment request was sent to\n${widget.payPhone}',
+            l.paymentSentTo(_opName, widget.payPhone),
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
           ),
@@ -720,7 +722,7 @@ Future<void> _doPoll() async {
             ]),
           ),
           const SizedBox(height: 8),
-          const Text('to confirm', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          Text(l.paymentToConfirm, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(height: 20),
           Container(
             width: double.infinity,
@@ -729,10 +731,10 @@ Future<void> _doPoll() async {
               color: AppColors.infoBg, borderRadius: BorderRadius.circular(14),
             ),
             child: Column(children: [
-              Text('Open $_opName on your phone',
+              Text(l.paymentOpenApp(_opName),
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.primary)),
               const SizedBox(height: 2),
-              Text('or dial $_opUssd to approve the request',
+              Text(l.paymentOrDial(_opUssd),
                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
             ]),
           ),
@@ -742,7 +744,7 @@ Future<void> _doPoll() async {
               _pollTimer?.cancel(); _countdownTimer?.cancel();
               Navigator.of(context).pop('cancelled'); // back to the payment screen
             },
-            child: const Text('Cancel payment', style: TextStyle(color: AppColors.danger, fontSize: 13)),
+            child: Text(l.paymentCancelBtn, style: const TextStyle(color: AppColors.danger, fontSize: 13)),
           ),
         ];
 
@@ -758,13 +760,13 @@ Future<void> _doPoll() async {
             ),
           ),
           const SizedBox(height: 22),
-          const Text('Payment confirmed!',
-              style: TextStyle(fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w900,
+          Text(l.paymentConfirmed,
+              style: const TextStyle(fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w900,
                   fontSize: 22, color: AppColors.primary)),
           const SizedBox(height: 8),
-          const Text('Your seat is secured.\nThe driver has been notified.',
+          Text(l.paymentSeatsSecured,
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5)),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5)),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity, height: 52,
@@ -775,7 +777,7 @@ Future<void> _doPoll() async {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 elevation: 0,
               ),
-              child: const Text('Back to Home', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              child: Text(l.paymentBackHome, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
             ),
           ),
         ];
@@ -794,7 +796,7 @@ Future<void> _doPoll() async {
                 : const Icon(Icons.close_rounded, color: AppColors.danger, size: 42),
           ),
           const SizedBox(height: 20),
-          Text(_insufficient ? 'Insufficient Balance' : 'Payment failed',
+          Text(_insufficient ? l.paymentInsufficientBalance : l.paymentFailed,
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.danger)),
           const SizedBox(height: 8),
           Text(_errorMessage,
@@ -811,11 +813,11 @@ Future<void> _doPoll() async {
                 border: Border.all(color: _opColor.withOpacity(.3)),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Top up $_opName',
+                Text(l.paymentTopUp(_opName),
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13,
                         color: widget.operator == 'orange' ? _orangeOrange : Colors.black87)),
                 const SizedBox(height: 4),
-                Text('Dial $_opUssd on your phone, then retry.',
+                Text(l.paymentDial(_opUssd),
                     style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
               ]),
             ),
@@ -830,14 +832,14 @@ Future<void> _doPoll() async {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 elevation: 0,
               ),
-              child: const Text('Try again', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              child: Text(l.paymentTryAgain, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
             ),
           ),
           const SizedBox(height: 6),
           TextButton(
             onPressed: () => Navigator.of(context).pop('failed'),
-            child: const Text('Close',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13.5)),
+            child: Text(l.paymentCloseBtn,
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13.5)),
           ),
         ];
     }

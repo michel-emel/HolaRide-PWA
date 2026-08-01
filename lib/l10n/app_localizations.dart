@@ -2323,6 +2323,1086 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Comfortable, affordable and safe\nrides across Cameroon.'**
   String get welcomeSubtitle;
+
+  /// No description provided for @liveTripConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your position'**
+  String get liveTripConsentTitle;
+
+  /// No description provided for @liveTripConsentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'During this trip, the driver will be able to see your live position. You can turn sharing off anytime from the tracking screen.'**
+  String get liveTripConsentBody;
+
+  /// No description provided for @liveTripConsentDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow without sharing'**
+  String get liveTripConsentDecline;
+
+  /// No description provided for @liveTripConsentAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get liveTripConsentAccept;
+
+  /// No description provided for @liveTripEndedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip completed'**
+  String get liveTripEndedTitle;
+
+  /// No description provided for @liveTripEndedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Location sharing was stopped automatically.'**
+  String get liveTripEndedBody;
+
+  /// No description provided for @liveTripBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get liveTripBack;
+
+  /// No description provided for @liveTripSharingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing your live position'**
+  String get liveTripSharingSubtitle;
+
+  /// No description provided for @liveTripFollowingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Following your driver'**
+  String get liveTripFollowingSubtitle;
+
+  /// No description provided for @liveTripMeMarker.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get liveTripMeMarker;
+
+  /// No description provided for @liveTripLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get liveTripLive;
+
+  /// No description provided for @liveTripUpdatedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {secs}s ago'**
+  String liveTripUpdatedAgo(int secs);
+
+  /// No description provided for @liveTripLastSeenAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen {mins}m ago'**
+  String liveTripLastSeenAgo(int mins);
+
+  /// No description provided for @liveTripWaitingSignal.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for signal...'**
+  String get liveTripWaitingSignal;
+
+  /// No description provided for @liveTripDriverSeesPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'The driver can see your position'**
+  String get liveTripDriverSeesPosition;
+
+  /// No description provided for @liveTripSharingOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing off'**
+  String get liveTripSharingOff;
+
+  /// No description provided for @liveTripSharingYourPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re sharing your position'**
+  String get liveTripSharingYourPosition;
+
+  /// No description provided for @liveTripNoPassengerYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No passenger position received yet.'**
+  String get liveTripNoPassengerYet;
+
+  /// No description provided for @liveTripPassengerVisible.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} passenger visible on the map.'**
+  String liveTripPassengerVisible(int count);
+
+  /// No description provided for @liveTripPassengersVisible.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} passengers visible on the map.'**
+  String liveTripPassengersVisible(int count);
+
+  /// No description provided for @liveTripRouteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km · {mins} min'**
+  String liveTripRouteLabel(String km, String mins);
+
+  /// No description provided for @liveTripPermServiceDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services are disabled on this device.'**
+  String get liveTripPermServiceDisabled;
+
+  /// No description provided for @liveTripPermDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission was denied.'**
+  String get liveTripPermDenied;
+
+  /// No description provided for @liveTripPermDeniedForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is permanently denied — enable it in your phone settings.'**
+  String get liveTripPermDeniedForever;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingLetsGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s Go!'**
+  String get onboardingLetsGo;
+
+  /// No description provided for @onboardingBrandName.
+  ///
+  /// In en, this message translates to:
+  /// **'HolaRide'**
+  String get onboardingBrandName;
+
+  /// No description provided for @onboardingTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the ride. Go further.'**
+  String get onboardingTagline;
+
+  /// No description provided for @onboardingPage1TitleLine1.
+  ///
+  /// In en, this message translates to:
+  /// **'Intercity travel,\n'**
+  String get onboardingPage1TitleLine1;
+
+  /// No description provided for @onboardingPage1TitleAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'smarter '**
+  String get onboardingPage1TitleAccent;
+
+  /// No description provided for @onboardingPage1TitleSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'together'**
+  String get onboardingPage1TitleSuffix;
+
+  /// No description provided for @onboardingPage1Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Book a seat or offer a ride to your\nfavorite cities in Cameroon.\nSafe, affordable and reliable.'**
+  String get onboardingPage1Body;
+
+  /// No description provided for @onboardingPage2TitlePrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Find the right ride\nfor '**
+  String get onboardingPage2TitlePrefix;
+
+  /// No description provided for @onboardingPage2TitleAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'your journey'**
+  String get onboardingPage2TitleAccent;
+
+  /// No description provided for @onboardingPage2Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Search trips between cities, compare options,\ncheck driver profiles and book your seat\nin just a few taps.'**
+  String get onboardingPage2Body;
+
+  /// No description provided for @onboardingPage3TitlePrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel with '**
+  String get onboardingPage3TitlePrefix;
+
+  /// No description provided for @onboardingPage3TitleAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'peace\n'**
+  String get onboardingPage3TitleAccent;
+
+  /// No description provided for @onboardingPage3TitleSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'of mind'**
+  String get onboardingPage3TitleSuffix;
+
+  /// No description provided for @onboardingPage3Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Live trip tracking, secure payments and\n24/7 support — we\'ve got you covered\nevery step of the way.'**
+  String get onboardingPage3Body;
+
+  /// No description provided for @onboardingFeatSafeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe & Trusted'**
+  String get onboardingFeatSafeTitle;
+
+  /// No description provided for @onboardingFeatSafeSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified drivers\n& secure payments'**
+  String get onboardingFeatSafeSub;
+
+  /// No description provided for @onboardingFeatShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find or Share'**
+  String get onboardingFeatShareTitle;
+
+  /// No description provided for @onboardingFeatShareSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your trip\nor offer seats'**
+  String get onboardingFeatShareSub;
+
+  /// No description provided for @onboardingFeatAffordableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Affordable'**
+  String get onboardingFeatAffordableTitle;
+
+  /// No description provided for @onboardingFeatAffordableSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Better prices\nfor every journey'**
+  String get onboardingFeatAffordableSub;
+
+  /// No description provided for @onboardingFeatRoutesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Many routes'**
+  String get onboardingFeatRoutesTitle;
+
+  /// No description provided for @onboardingFeatRoutesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Across Cameroon'**
+  String get onboardingFeatRoutesSub;
+
+  /// No description provided for @onboardingFeatPricesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Great prices'**
+  String get onboardingFeatPricesTitle;
+
+  /// No description provided for @onboardingFeatPricesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'No hidden fees'**
+  String get onboardingFeatPricesSub;
+
+  /// No description provided for @onboardingFeatBookingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick booking'**
+  String get onboardingFeatBookingTitle;
+
+  /// No description provided for @onboardingFeatBookingSub.
+  ///
+  /// In en, this message translates to:
+  /// **'In a few taps'**
+  String get onboardingFeatBookingSub;
+
+  /// No description provided for @onboardingFeatPaymentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure Payments'**
+  String get onboardingFeatPaymentsTitle;
+
+  /// No description provided for @onboardingFeatPaymentsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Your money is protected'**
+  String get onboardingFeatPaymentsSub;
+
+  /// No description provided for @onboardingFeatTrackingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Trip Tracking'**
+  String get onboardingFeatTrackingTitle;
+
+  /// No description provided for @onboardingFeatTrackingSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow your trip in real time'**
+  String get onboardingFeatTrackingSub;
+
+  /// No description provided for @onboardingFeatSupportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'24/7 Support'**
+  String get onboardingFeatSupportTitle;
+
+  /// No description provided for @onboardingFeatSupportSub.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'re here to help anytime'**
+  String get onboardingFeatSupportSub;
+
+  /// No description provided for @onboardingFooterTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Building a connected Cameroon, one ride at a time.'**
+  String get onboardingFooterTagline;
+
+  /// No description provided for @searchHeroTitlePrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Find '**
+  String get searchHeroTitlePrefix;
+
+  /// No description provided for @searchHeroTitleAccent.
+  ///
+  /// In en, this message translates to:
+  /// **'your ride'**
+  String get searchHeroTitleAccent;
+
+  /// No description provided for @searchHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find comfortable rides\nbetween cities.'**
+  String get searchHeroSubtitle;
+
+  /// No description provided for @searchQuickRoutesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Routes'**
+  String get searchQuickRoutesTitle;
+
+  /// No description provided for @searchQuickRoutesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a route to fill your search instantly.'**
+  String get searchQuickRoutesHint;
+
+  /// No description provided for @searchTrustPaymentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure payments'**
+  String get searchTrustPaymentsTitle;
+
+  /// No description provided for @searchTrustPaymentsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is protected'**
+  String get searchTrustPaymentsSubtitle;
+
+  /// No description provided for @searchTrustCommunityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted community'**
+  String get searchTrustCommunityTitle;
+
+  /// No description provided for @searchTrustCommunitySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified drivers'**
+  String get searchTrustCommunitySubtitle;
+
+  /// No description provided for @searchTrustSupportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'24/7 Support'**
+  String get searchTrustSupportTitle;
+
+  /// No description provided for @searchTrustSupportSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'re here for you'**
+  String get searchTrustSupportSubtitle;
+
+  /// No description provided for @searchResultsPassengerSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'passenger'**
+  String get searchResultsPassengerSingular;
+
+  /// No description provided for @searchResultsPassengerPlural.
+  ///
+  /// In en, this message translates to:
+  /// **'passengers'**
+  String get searchResultsPassengerPlural;
+
+  /// No description provided for @homeJoinPopupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to book trips and connect with verified drivers.'**
+  String get homeJoinPopupBody;
+
+  /// No description provided for @homeHeroTravelSmarterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel Smarter,\nSave More'**
+  String get homeHeroTravelSmarterTitle;
+
+  /// No description provided for @homeHeroTravelSmarterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the cost with fellow travelers going your way.'**
+  String get homeHeroTravelSmarterBody;
+
+  /// No description provided for @homeHeroSafeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe &\nReliable'**
+  String get homeHeroSafeTitle;
+
+  /// No description provided for @homeHeroSafeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All drivers are verified. Your safety is our priority.'**
+  String get homeHeroSafeBody;
+
+  /// No description provided for @homeHeroCameroonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Across\nCameroon'**
+  String get homeHeroCameroonTitle;
+
+  /// No description provided for @homeHeroCameroonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Yaoundé, Douala, Bafoussam and more destinations.'**
+  String get homeHeroCameroonBody;
+
+  /// No description provided for @homeFindRideSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for rides to your destination'**
+  String get homeFindRideSubtitle;
+
+  /// No description provided for @homeOfferRide.
+  ///
+  /// In en, this message translates to:
+  /// **'Offer a Ride'**
+  String get homeOfferRide;
+
+  /// No description provided for @homeOfferRideSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Post your trip and fill your empty seats'**
+  String get homeOfferRideSubtitle;
+
+  /// No description provided for @homeRideTogetherTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ride together, save more'**
+  String get homeRideTogetherTitle;
+
+  /// No description provided for @homeRideTogetherBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your ride, split\nthe fare and reduce cost.'**
+  String get homeRideTogetherBody;
+
+  /// No description provided for @homeLearnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn More'**
+  String get homeLearnMore;
+
+  /// No description provided for @homeHappyRiders.
+  ///
+  /// In en, this message translates to:
+  /// **'Happy riders\nusing HolaRide'**
+  String get homeHappyRiders;
+
+  /// No description provided for @homeTripsAvailableSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trip available'**
+  String homeTripsAvailableSingular(int count);
+
+  /// No description provided for @homeTripsAvailablePlural.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trips available'**
+  String homeTripsAvailablePlural(int count);
+
+  /// No description provided for @splashTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Travel together.\nSave more.'**
+  String get splashTagline;
+
+  /// No description provided for @splashTagSafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe'**
+  String get splashTagSafe;
+
+  /// No description provided for @splashTagAffordable.
+  ///
+  /// In en, this message translates to:
+  /// **'Affordable'**
+  String get splashTagAffordable;
+
+  /// No description provided for @splashTagReliable.
+  ///
+  /// In en, this message translates to:
+  /// **'Reliable'**
+  String get splashTagReliable;
+
+  /// No description provided for @splashFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting cities across Cameroon 🇨🇲'**
+  String get splashFooter;
+
+  /// No description provided for @paymentChangeNumberTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay with a different number'**
+  String get paymentChangeNumberTitle;
+
+  /// No description provided for @paymentChangeNumberBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The Mobile Money prompt will be sent to this number.'**
+  String get paymentChangeNumberBody;
+
+  /// No description provided for @paymentChangeNumberHint.
+  ///
+  /// In en, this message translates to:
+  /// **'675 123 456'**
+  String get paymentChangeNumberHint;
+
+  /// No description provided for @paymentChangeNumberError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 9-digit number starting with 6.'**
+  String get paymentChangeNumberError;
+
+  /// No description provided for @paymentUseThisNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this number'**
+  String get paymentUseThisNumber;
+
+  /// No description provided for @paymentUserCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'You cancelled the payment on your phone.'**
+  String get paymentUserCancelled;
+
+  /// No description provided for @paymentFailedGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed. Please try again.'**
+  String get paymentFailedGeneric;
+
+  /// No description provided for @paymentProviderUnreachable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the payment provider. Try again.'**
+  String get paymentProviderUnreachable;
+
+  /// No description provided for @paymentCloseBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get paymentCloseBtn;
+
+  /// No description provided for @payRemainingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay remaining balance'**
+  String get payRemainingTitle;
+
+  /// No description provided for @payRemainingDepositPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'20% deposit paid'**
+  String get payRemainingDepositPaid;
+
+  /// No description provided for @payRemainingBalanceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining balance'**
+  String get payRemainingBalanceLabel;
+
+  /// No description provided for @payRemainingMomoNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Mobile Money number'**
+  String get payRemainingMomoNumber;
+
+  /// No description provided for @payRemainingAutoDetectNote.
+  ///
+  /// In en, this message translates to:
+  /// **'MTN or Orange Money is detected automatically — you\'ll get a USSD prompt on this number.'**
+  String get payRemainingAutoDetectNote;
+
+  /// No description provided for @payRemainingCheckPhoneNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your phone — confirm the Mobile Money prompt to finish.'**
+  String get payRemainingCheckPhoneNote;
+
+  /// No description provided for @payRemainingWaitingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for confirmation...'**
+  String get payRemainingWaitingLabel;
+
+  /// No description provided for @payRemainingDevNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Only visible in debug builds. Bypasses real Mobile Money — works only while PAYMENT_DEV_MODE is on in the backend.'**
+  String get payRemainingDevNote;
+
+  /// No description provided for @payRemainingSimulateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not simulate payment.'**
+  String get payRemainingSimulateError;
+
+  /// No description provided for @payRemainingFailedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'The payment failed. Check your Mobile Money balance and try again.'**
+  String get payRemainingFailedMsg;
+
+  /// No description provided for @payRemainingExpiredMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'The payment request expired before you confirmed it. Try again.'**
+  String get payRemainingExpiredMsg;
+
+  /// No description provided for @payRemainingStillWaitingMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Still waiting on confirmation — check your phone, then try again if nothing came through.'**
+  String get payRemainingStillWaitingMsg;
+
+  /// No description provided for @payRemainingGenericError.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment could not be completed. Try again.'**
+  String get payRemainingGenericError;
+
+  /// No description provided for @tripDetailAppBarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip Details'**
+  String get tripDetailAppBarTitle;
+
+  /// No description provided for @tripDetailLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this trip.'**
+  String get tripDetailLoadError;
+
+  /// No description provided for @tripDetailTotalPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total price (1 seat)'**
+  String get tripDetailTotalPriceLabel;
+
+  /// No description provided for @tripDetailNoHiddenFees.
+  ///
+  /// In en, this message translates to:
+  /// **'No hidden fees'**
+  String get tripDetailNoHiddenFees;
+
+  /// No description provided for @tripDetailSecureBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure booking'**
+  String get tripDetailSecureBooking;
+
+  /// No description provided for @tripDetailVerifiedTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified Trip'**
+  String get tripDetailVerifiedTrip;
+
+  /// No description provided for @tripDetailSafeReliableTrusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe • Reliable • Trusted'**
+  String get tripDetailSafeReliableTrusted;
+
+  /// No description provided for @tripDetailDepartureTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure'**
+  String get tripDetailDepartureTag;
+
+  /// No description provided for @tripDetailArrivalTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrival'**
+  String get tripDetailArrivalTag;
+
+  /// No description provided for @tripDetailPromoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Affordable, safe and reliable travel'**
+  String get tripDetailPromoTitle;
+
+  /// No description provided for @tripDetailPromoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Book with confidence and enjoy your journey.'**
+  String get tripDetailPromoBody;
+
+  /// No description provided for @tripDetailSeatsLeftSingular.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} seat left'**
+  String tripDetailSeatsLeftSingular(int count);
+
+  /// No description provided for @tripDetailSeatsLeftPlural.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} seats left'**
+  String tripDetailSeatsLeftPlural(int count);
+
+  /// No description provided for @tripDetailLuggageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Luggage'**
+  String get tripDetailLuggageLabel;
+
+  /// No description provided for @tripDetailLuggageValue.
+  ///
+  /// In en, this message translates to:
+  /// **'1 bag per passenger'**
+  String get tripDetailLuggageValue;
+
+  /// No description provided for @tripDetailVerifiedDriverBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified driver'**
+  String get tripDetailVerifiedDriverBadge;
+
+  /// No description provided for @tripDetailIdVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'ID Verified'**
+  String get tripDetailIdVerified;
+
+  /// No description provided for @tripDetailPhoneVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone Verified'**
+  String get tripDetailPhoneVerified;
+
+  /// No description provided for @tripDetailBackgroundChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Background Checked'**
+  String get tripDetailBackgroundChecked;
+
+  /// No description provided for @tripDetailTripsCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Trips completed'**
+  String tripDetailTripsCompleted(int count);
+
+  /// No description provided for @tripDetailReviewCountBare.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} review'**
+  String tripDetailReviewCountBare(int count);
+
+  /// No description provided for @tripDetailReviewCountBarePlural.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} reviews'**
+  String tripDetailReviewCountBarePlural(int count);
+
+  /// No description provided for @tripDetailDriverProfileSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver profile coming soon'**
+  String get tripDetailDriverProfileSoon;
+
+  /// No description provided for @tripDetailKnowMoreDriver.
+  ///
+  /// In en, this message translates to:
+  /// **'Know more about the driver'**
+  String get tripDetailKnowMoreDriver;
+
+  /// No description provided for @safetyPriorityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your safety is our priority'**
+  String get safetyPriorityTitle;
+
+  /// No description provided for @safetyPriorityBody.
+  ///
+  /// In en, this message translates to:
+  /// **'SOS, live location sharing and in-app chat available.'**
+  String get safetyPriorityBody;
+
+  /// No description provided for @learnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn more'**
+  String get learnMore;
+
+  /// No description provided for @bookingRequestSafeSecureTrusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Safe · Secure · Trusted'**
+  String get bookingRequestSafeSecureTrusted;
+
+  /// No description provided for @bookingRequestSeatsQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'How many seats do you need?'**
+  String get bookingRequestSeatsQuestion;
+
+  /// No description provided for @bookingRequestSentHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request will be sent to the driver'**
+  String get bookingRequestSentHeading;
+
+  /// No description provided for @bookingRequestNotPayingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not paying yet'**
+  String get bookingRequestNotPayingYet;
+
+  /// No description provided for @bookingRequestSentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request will be sent to the driver. You\'ll only pay after the driver accepts your request.'**
+  String get bookingRequestSentBody;
+
+  /// No description provided for @bookingRequestPayFullSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay {amount} now.'**
+  String bookingRequestPayFullSubtitle(String amount);
+
+  /// No description provided for @bookingRequestPayBalanceTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay balance before trip'**
+  String get bookingRequestPayBalanceTag;
+
+  /// No description provided for @bookingRequestTotalToPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Total to pay'**
+  String get bookingRequestTotalToPay;
+
+  /// No description provided for @bookingRequestPaidAfterAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'(paid after driver accepts)'**
+  String get bookingRequestPaidAfterAccept;
+
+  /// No description provided for @cancellationWindowNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You can cancel for free up to 2 hours before departure.'**
+  String get cancellationWindowNote;
+
+  /// No description provided for @bookingRequestSendButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Request to Driver'**
+  String get bookingRequestSendButton;
+
+  /// No description provided for @bookingRequestSendSubtext.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver must accept before booking is confirmed'**
+  String get bookingRequestSendSubtext;
+
+  /// No description provided for @bookingRequestSendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send your request. Try again.'**
+  String get bookingRequestSendError;
+
+  /// No description provided for @waitingWhatsNext.
+  ///
+  /// In en, this message translates to:
+  /// **'What happens next?'**
+  String get waitingWhatsNext;
+
+  /// No description provided for @waitingStepRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get waitingStepRequestSent;
+
+  /// No description provided for @waitingStepDriverNotified.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver notified'**
+  String get waitingStepDriverNotified;
+
+  /// No description provided for @waitingStepDriverResponds.
+  ///
+  /// In en, this message translates to:
+  /// **'Driver responds'**
+  String get waitingStepDriverResponds;
+
+  /// No description provided for @waitingNotifyHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll notify you immediately'**
+  String get waitingNotifyHeading;
+
+  /// No description provided for @waitingNotifyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can continue using the app.\nWe\'ll let you know as soon as the driver accepts.'**
+  String get waitingNotifyBody;
+
+  /// No description provided for @waitingGoHomeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Go Home'**
+  String get waitingGoHomeButton;
+
+  /// No description provided for @orDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get orDivider;
+
+  /// No description provided for @waitingResponseTimeBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Most drivers respond within 5–10 minutes.'**
+  String get waitingResponseTimeBanner;
+
+  /// No description provided for @chatHideChatBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes it from your own list only — the other side keeps their conversation as normal. If a new message comes in later, it\'ll reappear in your list.'**
+  String get chatHideChatBody;
+
+  /// No description provided for @chatHideChatError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete this chat. Try again.'**
+  String get chatHideChatError;
+
+  /// No description provided for @driverFlowLoginReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to publish a trip as a driver.'**
+  String get driverFlowLoginReason;
+
+  /// No description provided for @payoutRowLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payout'**
+  String get payoutRowLabel;
+
+  /// No description provided for @tripMgmtStartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start this trip?'**
+  String get tripMgmtStartTitle;
+
+  /// No description provided for @tripMgmtStartBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The trip will be marked as ongoing. Your paid passengers will be able to follow your live position until you mark it completed.'**
+  String get tripMgmtStartBody;
+
+  /// No description provided for @tripMgmtNotYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not yet'**
+  String get tripMgmtNotYet;
+
+  /// No description provided for @tripMgmtStartBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Trip'**
+  String get tripMgmtStartBtn;
+
+  /// No description provided for @tripMgmtStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting...'**
+  String get tripMgmtStarting;
+
+  /// No description provided for @tripMgmtStartedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip started — passengers can now follow you.'**
+  String get tripMgmtStartedMsg;
+
+  /// No description provided for @tripMgmtStartError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start the trip. Try again.'**
+  String get tripMgmtStartError;
+
+  /// No description provided for @tripMgmtInProgressBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip in progress — tap to open the live map.'**
+  String get tripMgmtInProgressBanner;
+
+  /// No description provided for @tripMgmtAcceptTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get tripMgmtAcceptTooltip;
+
+  /// No description provided for @tripMgmtRejectTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get tripMgmtRejectTooltip;
+
+  /// No description provided for @tripMgmtNoShowFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'this passenger'**
+  String get tripMgmtNoShowFallbackName;
+
+  /// No description provided for @tripMgmtDoneFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Done.'**
+  String get tripMgmtDoneFallback;
 }
 
 class _AppLocalizationsDelegate

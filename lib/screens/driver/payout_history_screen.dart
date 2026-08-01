@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
+import '../../utils/date_labels.dart';
 import '../../models/payout.dart';
 import '../../services/payout_service.dart';
 import '../../theme/app_colors.dart';
@@ -46,7 +48,7 @@ class _PayoutHistoryScreenState extends State<PayoutHistoryScreen> {
       print('Error in lib/screens/driver/payout_history_screen.dart: $e');
       if (!mounted) return;
       setState(() {
-        _error = "Couldn't load your payouts.";
+        _error = AppLocalizations.of(context).payoutLoadError;
         _loading = false;
       });
     }
@@ -66,17 +68,15 @@ class _PayoutHistoryScreenState extends State<PayoutHistoryScreen> {
   }
 
   String _dateLabel(DateTime t) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${t.day} ${months[t.month - 1]} ${t.year}';
+    return '${t.day} ${monthAbbrev(context, t.month)} ${t.year}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Payout history')),
+      appBar: AppBar(title: Text(l.payoutTitle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
           : _error != null
@@ -96,27 +96,27 @@ class _PayoutHistoryScreenState extends State<PayoutHistoryScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Total paid out',
-                                style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 13)),
+                            Text(l.payoutTotal,
+                                style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 13)),
                             const SizedBox(height: 6),
                             Text(_money(_totalPaid),
                                 style: const TextStyle(
                                     color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800)),
                             const SizedBox(height: 10),
-                            const Text(
-                              'Sent automatically to your Mobile Money after each completed trip.',
-                              style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12),
+                            Text(
+                              l.payoutNote,
+                              style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 22),
-                      const Text('History', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                      Text(l.payoutHistory, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                       const SizedBox(height: 10),
                       if (_history.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Text('No payouts yet.', style: TextStyle(color: AppColors.textSecondary)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Text(l.payoutEmpty, style: const TextStyle(color: AppColors.textSecondary)),
                         )
                       else
                         ..._history.map(
@@ -138,7 +138,7 @@ class _PayoutHistoryScreenState extends State<PayoutHistoryScreen> {
                                         Text(_dateLabel(p.date),
                                             style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
                                         const SizedBox(height: 2),
-                                        Text('Payout', style: const TextStyle(fontWeight: FontWeight.w600)),
+                                        Text(l.payoutRowLabel, style: const TextStyle(fontWeight: FontWeight.w600)),
                                       ],
                                     ),
                                   ),
@@ -155,7 +155,7 @@ class _PayoutHistoryScreenState extends State<PayoutHistoryScreen> {
                                           borderRadius: BorderRadius.circular(16),
                                         ),
                                         child: Text(
-                                          p.isPaid ? 'Paid' : 'Pending',
+                                          p.isPaid ? l.payoutPaid : l.payoutPending,
                                           style: TextStyle(
                                             color: p.isPaid ? AppColors.success : AppColors.warning,
                                             fontSize: 11,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../widgets/primary_button.dart';
+import '../l10n/app_localizations.dart';
 import 'main_tab_screen.dart';
 
 /// Screen 1 — Splash.
@@ -24,6 +25,7 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -77,30 +79,30 @@ class SplashScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Travel together.\nSave more.',
+                  Text(
+                    l.splashTagline,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontSize: 17, height: 1.4, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: Colors.white, fontSize: 17, height: 1.4, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 14),
-                  const Wrap(
+                  Wrap(
                     alignment: WrapAlignment.center,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     spacing: 8,
                     children: [
-                      Text('Safe', style: TextStyle(color: Colors.white, fontSize: 14)),
-                      Icon(Icons.circle, size: 5, color: AppColors.gold),
-                      Text('Affordable', style: TextStyle(color: Colors.white, fontSize: 14)),
-                      Icon(Icons.circle, size: 5, color: AppColors.gold),
-                      Text('Reliable', style: TextStyle(color: Colors.white, fontSize: 14)),
+                      Text(l.splashTagSafe, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                      const Icon(Icons.circle, size: 5, color: AppColors.gold),
+                      Text(l.splashTagAffordable, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                      const Icon(Icons.circle, size: 5, color: AppColors.gold),
+                      Text(l.splashTagReliable, style: const TextStyle(color: Colors.white, fontSize: 14)),
                     ],
                   ),
                   const Spacer(flex: 5),
-                  GoldButton(label: 'Get Started', onPressed: () => _getStarted(context)),
+                  GoldButton(label: l.homeGetStarted, onPressed: () => _getStarted(context)),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Connecting cities across Cameroon 🇨🇲',
-                    style: TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12.5),
+                  Text(
+                    l.splashFooter,
+                    style: const TextStyle(color: AppColors.textOnDarkMuted, fontSize: 12.5),
                   ),
                   const SizedBox(height: 8),
                 ],

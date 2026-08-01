@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
+import '../../utils/date_labels.dart';
 import '../../models/location.dart';
 import '../../models/vehicle.dart';
 import '../../services/api_client.dart';
@@ -115,7 +117,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       if (!mounted) return;
       setState(() {
         _pricePreview = null;
-        _priceError = "Couldn't load a price for this route.";
+        _priceError = AppLocalizations.of(context).createTripNoPriceError;
         _loadingPrice = false;
       });
     }
@@ -123,7 +125,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
 
   Future<void> _pickFrom() async {
     final result = await Navigator.of(context).push<LocationResult>(
-      MaterialPageRoute(builder: (_) => const LocationPickerScreen(title: 'Leaving from')),
+      MaterialPageRoute(builder: (_) => LocationPickerScreen(title: AppLocalizations.of(context).createTripLeavingFrom)),
     );
     if (result != null) {
       setState(() => _from = result);
@@ -133,7 +135,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
 
   Future<void> _pickTo() async {
     final result = await Navigator.of(context).push<LocationResult>(
-      MaterialPageRoute(builder: (_) => const LocationPickerScreen(title: 'Going to')),
+      MaterialPageRoute(builder: (_) => LocationPickerScreen(title: AppLocalizations.of(context).createTripGoingTo)),
     );
     if (result != null) {
       setState(() => _to = result);
@@ -167,10 +169,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   }
 
   String get _dateLabel {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${_date.day} ${months[_date.month - 1]} ${_date.year}';
+    return '${_date.day} ${monthAbbrev(context, _date.month)} ${_date.year}';
   }
 
   String get _timeLabel =>
@@ -178,11 +177,11 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
 
   Future<void> _publish() async {
     if (_from == null || _to == null) {
-      setState(() => _error = 'Choose where you\'re leaving from and going to.');
+      setState(() => _error = AppLocalizations.of(context).createTripLocationHint);
       return;
     }
     if (_vehicle == null) {
-      setState(() => _error = 'No approved vehicle found on your account — check My Vehicle in Profile.');
+      setState(() => _error = AppLocalizations.of(context).createTripNoVehicle);
       return;
     }
     setState(() {
@@ -208,7 +207,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/driver/create_trip_screen.dart: $e');
-      setState(() => _error = 'Could not publish this trip. Try again.');
+      setState(() => _error = AppLocalizations.of(context).createTripPublishError);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -216,15 +215,16 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Create a trip')),
+      appBar: AppBar(title: Text(l.createTripTitle)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _locationField(label: 'From', value: _from, icon: Icons.radio_button_checked, onTap: _pickFrom),
+          _locationField(label: l.createTripFrom, value: _from, icon: Icons.radio_button_checked, onTap: _pickFrom),
           const SizedBox(height: 10),
-          _locationField(label: 'To', value: _to, icon: Icons.location_on, onTap: _pickTo),
+          _locationField(label: l.createTripTo, value: _to, icon: Icons.location_on, onTap: _pickTo),
           const SizedBox(height: 14),
           Row(
             children: [
@@ -246,7 +246,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Date', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              Text(l.createTripDate, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                               Text(_dateLabel, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                             ],
                           ),
@@ -275,8 +275,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Departure time',
-                                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              Text(l.createTripDeparture,
+                                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                               Text(_timeLabel, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                             ],
                           ),
@@ -300,9 +300,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Available seats', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text(l.createTripSeats, style: const TextStyle(fontWeight: FontWeight.w600)),
                       if (_vehicle != null)
-                        Text('Up to $_maxSeats — your vehicle\'s registered capacity',
+                        Text(l.createTripSeatsHint(_maxSeats),
                             style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     ],
                   ),
@@ -331,7 +331,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Price per seat', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      Text(l.createTripPrice, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                       if (_loadingPrice)
                         const Padding(
                           padding: EdgeInsets.only(top: 2),
@@ -350,9 +350,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.primary),
                         )
                       else
-                        const Text(
-                          'Pick "From" and "To" to see the price',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary),
+                        Text(
+                          l.createTripPriceHint,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary),
                         ),
                     ],
                   ),
@@ -361,11 +361,11 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'Set by HolaRide based on your route and vehicle category — drivers don\'t set prices.',
-              style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+              l.createTripPriceNote,
+              style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
             ),
           ),
           if (_error != null) ...[
@@ -374,7 +374,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
           ],
           const SizedBox(height: 24),
           PrimaryButton(
-            label: 'Publish Trip',
+            label: l.createTripPublish,
             onPressed: _loadingVehicle ? null : _publish,
             loading: _submitting || _loadingVehicle,
           ),
@@ -406,7 +406,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 children: [
                   Text(label, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
                   Text(
-                    value?.label ?? 'Select location',
+                    value?.label ?? AppLocalizations.of(context).createTripSelectLocation,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: value == null ? AppColors.textSecondary : AppColors.textPrimary,

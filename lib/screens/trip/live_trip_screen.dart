@@ -8,6 +8,7 @@ import '../../services/location_sharing_service.dart';
 import '../../services/route_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Screen — Live trip map (Google Maps SDK).
 ///
@@ -63,7 +64,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   bool _follow = true;
   bool _programmaticMove = false;
   bool _hadFix = false; // first GPS fix received → forces the initial zoom
-  String? _permError;
+  LocationPermissionError? _permError;
 
   // Passe à true dès que le service signale la fin du trajet (409 côté
   // backend). Remplace toute la zone carte + carte du bas par un état
@@ -75,6 +76,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   // refreshed at most every 30s, or sooner if the driver has moved
   // noticeably — not on every ~4s GPS tick.
   static const _routeMinInterval = Duration(seconds: 30);
+  static const _routeRetryInterval = Duration(seconds: 10);
   static const _routeMinMoveMeters = 300;
   RouteResult? _route;
   DateTime? _routeFetchedAt;
@@ -116,12 +118,13 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
 
     // Driver view: map passenger ids to names for the pins.
     if (_isDriver) {
+      final passengerFallback = AppLocalizations.of(context).chatInboxPassenger;
       try {
         final bookings = await DriverService.instance.tripBookings(widget.trip.id);
         for (final b in bookings) {
           final pid = b.passengerId;
           if (pid != null && pid.isNotEmpty) {
-            _names[pid] = b.passengerName ?? 'Passenger';
+            _names[pid] = b.passengerName ?? passengerFallback;
           }
         }
       } catch (_) {
@@ -155,7 +158,8 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     if (_permError != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_permError!)));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(_permErrorLabel(_permError!))));
         }
       });
     }
@@ -168,9 +172,16 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
         final first = !_hadFix;
         _hadFix = true;
         // The FIRST fix always moves+zooms the camera, even if _follow
-        // was wrongly disabled by a spurious camera event on web.
+        // was wrongly disabled by a spurious camera event on web. Once
+        // both positions are known, fit the camera to the whole route
+        // instead of just centering tightly on the driver — otherwise
+        // the polyline runs off-screen and only the pins are visible.
         if (first || _follow) {
-          _moveCamera(LatLng(p.latitude, p.longitude));
+          if (_me != null) {
+            _fitToRoute();
+          } else {
+            _moveCamera(LatLng(p.latitude, p.longitude));
+          }
         }
         _maybeFetchRoute();
       }
@@ -195,6 +206,10 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
           final first = !_hadFix;
           _hadFix = true;
           if (first || _follow) _moveCamera(target);
+        } else if (_follow) {
+          // Passenger, driver already known — keep the route in frame
+          // as MY position moves too, not just when the driver moves.
+          _fitToRoute();
         }
         _maybeFetchRoute();
       });
@@ -238,28 +253,26 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
           children: [
             const Icon(Icons.location_on, color: AppColors.primary, size: 32),
             const SizedBox(height: 12),
-            const Text('Partager votre position',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+            Text(AppLocalizations.of(ctx).liveTripConsentTitle,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
             const SizedBox(height: 8),
-            const Text(
-              'Pendant ce trajet, le conducteur pourra voir votre position en '
-              'direct. Vous pouvez désactiver le partage à tout moment depuis '
-              'l\'écran de suivi.',
-              style: TextStyle(fontSize: 13.5, color: AppColors.textSecondary),
+            Text(
+              AppLocalizations.of(ctx).liveTripConsentBody,
+              style: const TextStyle(fontSize: 13.5, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 20),
             Row(children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Suivre sans partager'),
+                  child: Text(AppLocalizations.of(ctx).liveTripConsentDecline),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: FilledButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Partager'),
+                  child: Text(AppLocalizations.of(ctx).liveTripConsentAccept),
                 ),
               ),
             ]),
@@ -267,6 +280,18 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
         ),
       ),
     );
+  }
+
+  String _permErrorLabel(LocationPermissionError error) {
+    final l = AppLocalizations.of(context);
+    switch (error) {
+      case LocationPermissionError.serviceDisabled:
+        return l.liveTripPermServiceDisabled;
+      case LocationPermissionError.denied:
+        return l.liveTripPermDenied;
+      case LocationPermissionError.deniedForever:
+        return l.liveTripPermDeniedForever;
+    }
   }
 
   Future<void> _moveCamera(LatLng target) async {
@@ -284,6 +309,44 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     }
     // Small delay so onCameraMoveStarted from THIS animation doesn't
     // get mistaken for a user gesture.
+    Future.delayed(const Duration(milliseconds: 400), () => _programmaticMove = false);
+  }
+
+  /// Animates the camera to fit both the driver and me in frame — using
+  /// the real route's points when available, or a straight line between
+  /// the two while the route is still loading (or failed to load).
+  /// Without this, following the driver at street-level zoom means the
+  /// route (and often the other party's pin) simply runs off-screen.
+  Future<void> _fitToRoute() async {
+    final map = _map;
+    final driver = _driverPos;
+    final me = _me;
+    if (map == null || driver == null || me == null) return;
+
+    final route = _route;
+    final points = (route != null && route.points.length >= 2)
+        ? route.points
+        : [LatLng(driver.latitude, driver.longitude), LatLng(me.latitude, me.longitude)];
+
+    double minLat = points.first.latitude, maxLat = points.first.latitude;
+    double minLng = points.first.longitude, maxLng = points.first.longitude;
+    for (final p in points) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLng) minLng = p.longitude;
+      if (p.longitude > maxLng) maxLng = p.longitude;
+    }
+
+    _programmaticMove = true;
+    try {
+      await map.animateCamera(CameraUpdate.newLatLngBounds(
+        LatLngBounds(southwest: LatLng(minLat, minLng), northeast: LatLng(maxLat, maxLng)),
+        64,
+      ));
+    } catch (_) {
+      // newLatLngBounds can throw if the map view hasn't finished its
+      // first layout yet (zero size) — harmless, the next call succeeds.
+    }
     Future.delayed(const Duration(milliseconds: 400), () => _programmaticMove = false);
   }
 
@@ -321,23 +384,50 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
         )
         .then((result) {
       _routeFetchInFlight = false;
+      if (result == null) {
+        // Failed (network hiccup, timeout, API error) — retry sooner
+        // than the normal cadence instead of waiting the full 30s, so a
+        // transient failure doesn't look like the feature is broken.
+        _routeFetchedAt = DateTime.now().subtract(_routeMinInterval - _routeRetryInterval);
+        return;
+      }
       _routeFetchedAt = DateTime.now();
-      if (!mounted || result == null) return;
+      if (!mounted) return;
       setState(() => _route = result);
+      if (_follow) _fitToRoute();
     });
   }
 
   Set<Polyline> _buildPolylines() {
     final r = _route;
-    if (r == null || r.points.length < 2) return {};
-    return {
-      Polyline(
-        polylineId: const PolylineId('driver-route'),
-        points: r.points,
-        color: AppColors.primary,
-        width: 4,
-      ),
-    };
+    if (r != null && r.points.length >= 2) {
+      return {
+        Polyline(
+          polylineId: const PolylineId('driver-route'),
+          points: r.points,
+          color: AppColors.primary,
+          width: 4,
+        ),
+      };
+    }
+
+    // No real route yet (still loading, or the API call failed) — draw
+    // a straight line so the passenger always sees a connecting line
+    // immediately, upgraded to the real road route once it arrives.
+    final driver = _driverPos;
+    final me = _me;
+    if (!_isDriver && driver != null && me != null) {
+      return {
+        Polyline(
+          polylineId: const PolylineId('driver-route-fallback'),
+          points: [LatLng(driver.latitude, driver.longitude), LatLng(me.latitude, me.longitude)],
+          color: AppColors.primary.withOpacity(.5),
+          width: 3,
+          patterns: [PatternItem.dash(16), PatternItem.gap(10)],
+        ),
+      };
+    }
+    return {};
   }
 
   String? get _routeLabel {
@@ -346,11 +436,15 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     final km = r.distanceMeters / 1000;
     final kmLabel = km >= 10 ? km.toStringAsFixed(0) : km.toStringAsFixed(1);
     final mins = (r.duration.inSeconds / 60).round();
-    return '$kmLabel km · ${mins < 1 ? '<1' : mins} min';
+    return AppLocalizations.of(context).liveTripRouteLabel(kmLabel, mins < 1 ? '<1' : '$mins');
   }
 
   void _recenter() {
     setState(() => _follow = true);
+    if (!_isDriver && _driverPos != null && _me != null) {
+      _fitToRoute();
+      return;
+    }
     final target = _isDriver
         ? (_me != null ? LatLng(_me!.latitude, _me!.longitude) : null)
         : (_driverPos != null ? LatLng(_driverPos!.latitude, _driverPos!.longitude) : null);
@@ -387,7 +481,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
         markerId: MarkerId('passenger-${entry.key}'),
         position: LatLng(p.latitude, p.longitude),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-        infoWindow: InfoWindow(title: _names[entry.key] ?? 'Passenger'),
+        infoWindow: InfoWindow(title: _names[entry.key] ?? AppLocalizations.of(context).chatInboxPassenger),
         zIndex: 2,
       ));
     }
@@ -399,7 +493,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
         markerId: const MarkerId('me'),
         position: LatLng(_me!.latitude, _me!.longitude),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-        infoWindow: const InfoWindow(title: 'You'),
+        infoWindow: InfoWindow(title: AppLocalizations.of(context).liveTripMeMarker),
         zIndex: 1,
       ));
     }
@@ -412,11 +506,12 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   String? get _freshnessLabel {
     final d = _driverPos;
     if (d == null) return null;
+    final l = AppLocalizations.of(context);
     final secs = DateTime.now().difference(d.updatedAt).inSeconds;
-    if (secs < 5) return 'Live';
-    if (secs < 60) return 'Updated ${secs}s ago';
+    if (secs < 5) return l.liveTripLive;
+    if (secs < 60) return l.liveTripUpdatedAgo(secs);
     final mins = secs ~/ 60;
-    return 'Last seen ${mins}m ago';
+    return l.liveTripLastSeenAgo(mins);
   }
 
   bool get _isStale {
@@ -430,6 +525,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   @override
   Widget build(BuildContext context) {
     final trip = widget.trip;
+    final l = AppLocalizations.of(context);
 
     // État terminal — remplace tout (carte + carte du bas) dès que le
     // trajet est marqué terminé côté serveur. Commun aux deux rôles :
@@ -468,18 +564,18 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
                   child: const Icon(Icons.check_circle_outline, color: AppColors.success, size: 32),
                 ),
                 const SizedBox(height: 16),
-                const Text('Trajet terminé',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                Text(l.liveTripEndedTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
                 const SizedBox(height: 6),
-                const Text(
-                  'Le partage de position a été arrêté automatiquement.',
+                Text(
+                  l.liveTripEndedBody,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 20),
                 FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Retour'),
+                  child: Text(l.liveTripBack),
                 ),
               ],
             ),
@@ -514,7 +610,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
           children: [
             Text('${trip.originCity} → ${trip.destinationCity}',
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-            Text(_isDriver ? 'Sharing your live position' : 'Following your driver',
+            Text(_isDriver ? l.liveTripSharingSubtitle : l.liveTripFollowingSubtitle,
                 style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.normal)),
           ],
         ),
@@ -567,14 +663,14 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
               borderRadius: BorderRadius.circular(18),
               boxShadow: [BoxShadow(color: Colors.black.withOpacity(.12), blurRadius: 20, offset: const Offset(0, 6))],
             ),
-            child: _isDriver ? _driverCard() : _passengerCard(),
+            child: _isDriver ? _driverCard(l) : _passengerCard(l),
           ),
         ),
       ]),
     );
   }
 
-  Widget _passengerCard() {
+  Widget _passengerCard(AppLocalizations l) {
     final trip = widget.trip;
     final label = _freshnessLabel;
     return Column(
@@ -597,8 +693,8 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
             ]),
           ),
           if (label == null)
-            const Text('Waiting for signal...',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary))
+            Text(l.liveTripWaitingSignal,
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary))
           else
             Row(mainAxisSize: MainAxisSize.min, children: [
               Container(
@@ -644,8 +740,8 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
             Expanded(
               child: Text(
                 _svc.isSharing
-                    ? 'Le conducteur voit votre position'
-                    : 'Partage désactivé',
+                    ? l.liveTripDriverSeesPosition
+                    : l.liveTripSharingOff,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
@@ -671,7 +767,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     );
   }
 
-  Widget _driverCard() {
+  Widget _driverCard(AppLocalizations l) {
     final passengerCount = _svc.lastKnown.keys
         .where((id) => id != widget.trip.driverId && id != _myId)
         .length;
@@ -684,12 +780,14 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
       const SizedBox(width: 12),
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('You are sharing your position',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+          Text(l.liveTripSharingYourPosition,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
           Text(
             passengerCount == 0
-                ? 'No passenger position received yet.'
-                : '$passengerCount passenger${passengerCount > 1 ? 's' : ''} visible on the map.',
+                ? l.liveTripNoPassengerYet
+                : (passengerCount == 1
+                    ? l.liveTripPassengerVisible(passengerCount)
+                    : l.liveTripPassengersVisible(passengerCount)),
             style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
         ]),

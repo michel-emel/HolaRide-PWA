@@ -8,7 +8,9 @@ import '../../services/auth_service.dart';
 import '../../services/session_service.dart';
 import '../../services/vehicle_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/date_labels.dart';
 import '../../widgets/app_header.dart';
+import '../../widgets/language_switcher.dart';
 import '../../widgets/primary_button.dart';
 import '../driver/driver_flow_router.dart';
 import '../driver/payout_history_screen.dart';
@@ -125,8 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _monthYear(DateTime d) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${months[d.month - 1]} ${d.year}';
+    return '${monthAbbrev(context, d.month)} ${d.year}';
   }
 
   @override
@@ -187,6 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     MaterialPageRoute(builder: (_) => const PayoutHistoryScreen())),
               ),
           ],
+          _languageRow(l),
 
           const SizedBox(height: 18),
           _sectionLabel(l.profileSupport),
@@ -495,6 +497,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const Icon(Icons.swap_horiz, color: AppColors.primary),
           ]),
         ),
+      ),
+    );
+  }
+
+  Widget _languageRow(AppLocalizations l) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), shape: BoxShape.circle),
+            child: const Icon(Icons.language, size: 19, color: AppColors.primary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(l.profileLanguage, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5)),
+          ),
+          const LanguageToggleButton(),
+        ]),
       ),
     );
   }

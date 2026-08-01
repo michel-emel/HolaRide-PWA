@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/booking.dart';
 import '../../models/trip.dart';
 import '../../theme/app_colors.dart';
@@ -78,21 +79,20 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
   }
 
   void _showDeclined() {
+    final l = AppLocalizations.of(context);
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text('Request declined'),
-        content: const Text(
-          'The driver wasn\'t able to accept your request this time. You can search for another trip.',
-        ),
+        title: Text(l.waitingDeclinedTitle),
+        content: Text(l.waitingDeclinedBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const MainTabScreen()),
               (route) => false,
             ),
-            child: const Text('Back to Home'),
+            child: Text(l.waitingBackHome),
           ),
         ],
       ),
@@ -139,6 +139,8 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final waitingBodyLines = l.waitingBody.split('\n');
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -146,11 +148,11 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        title: const Text('Waiting for the driver',
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+        title: Text(l.waitingTitle,
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
         actions: [
           IconButton(
-            tooltip: 'Profile',
+            tooltip: l.tabProfile,
             onPressed: _openProfile,
             icon: Container(
               width: 34,
@@ -187,13 +189,13 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
           ),
 
           const SizedBox(height: 26),
-          const Text("We've sent your request to the driver.",
+          Text(waitingBodyLines[0],
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
           const SizedBox(height: 6),
-          const Text("You'll be notified here as soon as they respond.",
+          Text(waitingBodyLines.length > 1 ? waitingBodyLines[1] : '',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14.5, color: AppColors.textSecondary, height: 1.4)),
+              style: const TextStyle(fontSize: 14.5, color: AppColors.textSecondary, height: 1.4)),
 
           const SizedBox(height: 20),
 
@@ -207,15 +209,9 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
             child: Row(children: [
               Icon(Icons.schedule, size: 20, color: AppColors.gold),
               const SizedBox(width: 12),
-              const Expanded(
-                child: Text.rich(TextSpan(
-                  text: 'Most drivers respond within ',
-                  style: TextStyle(fontSize: 13.5, color: AppColors.textPrimary),
-                  children: [
-                    TextSpan(text: '5–10 minutes.',
-                        style: TextStyle(fontWeight: FontWeight.w800)),
-                  ],
-                )),
+              Expanded(
+                child: Text(l.waitingResponseTimeBanner,
+                    style: const TextStyle(fontSize: 13.5, color: AppColors.textPrimary)),
               ),
             ]),
           ),
@@ -225,14 +221,14 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
           const SizedBox(height: 18),
 
           // ── What happens next? ──────────────────────────────
-          const Text('What happens next?',
+          Text(l.waitingWhatsNext,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
           const SizedBox(height: 18),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _StepItem(icon: Icons.send_outlined, label: 'Request sent', rotateIcon: true),
+              _StepItem(icon: Icons.send_outlined, label: l.waitingStepRequestSent, rotateIcon: true),
               Expanded(
                 child: SizedBox(
                   height: 52,
@@ -244,7 +240,7 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
                   ),
                 ),
               ),
-              const _StepItem(icon: Icons.notifications_none, label: 'Driver notified'),
+              _StepItem(icon: Icons.notifications_none, label: l.waitingStepDriverNotified),
               Expanded(
                 child: SizedBox(
                   height: 52,
@@ -256,7 +252,7 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
                   ),
                 ),
               ),
-              const _StepItem(icon: Icons.person_outline, label: 'Driver responds'),
+              _StepItem(icon: Icons.person_outline, label: l.waitingStepDriverResponds),
             ],
           ),
 
@@ -282,15 +278,15 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
                   child: const Icon(Icons.notifications_active_outlined, size: 22, color: AppColors.primary),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("We'll notify you immediately",
-                          style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-                      SizedBox(height: 4),
-                      Text("You can continue using the app.\nWe'll let you know as soon as the driver accepts.",
-                          style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),
+                      Text(l.waitingNotifyHeading,
+                          style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                      const SizedBox(height: 4),
+                      Text(l.waitingNotifyBody,
+                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),
                     ],
                   ),
                 ),
@@ -315,14 +311,14 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
               child: InkWell(
                 onTap: _goHome,
                 borderRadius: BorderRadius.circular(16),
-                child: const Center(
+                child: Center(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.home_outlined, color: Colors.white, size: 22),
-                      SizedBox(width: 10),
-                      Text('Go Home',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                      const Icon(Icons.home_outlined, color: Colors.white, size: 22),
+                      const SizedBox(width: 10),
+                      Text(l.waitingGoHomeButton,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
                     ],
                   ),
                 ),
@@ -335,9 +331,9 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
           // ── "or" divider ────────────────────────────────────
           Row(children: [
             Expanded(child: Divider(color: AppColors.border.withOpacity(.8))),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 14),
-              child: Text('or', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Text(l.orDivider, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
             ),
             Expanded(child: Divider(color: AppColors.border.withOpacity(.8))),
           ]),
@@ -353,23 +349,23 @@ class _WaitingForDriverScreenState extends State<WaitingForDriverScreen>
                 side: BorderSide(color: AppColors.danger.withOpacity(.5), width: 1.2),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.cancel_outlined, size: 20, color: AppColors.danger),
-                  SizedBox(width: 10),
-                  Text('Withdraw request',
-                      style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800, fontSize: 15.5)),
+                  const Icon(Icons.cancel_outlined, size: 20, color: AppColors.danger),
+                  const SizedBox(width: 10),
+                  Text(l.waitingWithdraw,
+                      style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800, fontSize: 15.5)),
                 ],
               ),
             ),
           ),
 
           const SizedBox(height: 12),
-          const Center(
-            child: Text('You can cancel for free up to 2 hours before departure.',
+          Center(
+            child: Text(l.cancellationWindowNote,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
           ),
           const SizedBox(height: 24),
         ],

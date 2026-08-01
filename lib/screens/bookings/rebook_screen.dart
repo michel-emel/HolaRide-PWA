@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/trip.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/date_labels.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/profile_icon_button.dart';
 import '../main_tab_screen.dart';
@@ -17,15 +19,13 @@ class RebookScreen extends StatelessWidget {
   String _timeLabel(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-  String _dateLabel(DateTime t) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${t.day} ${months[t.month - 1]} ${t.year}';
+  String _dateLabel(BuildContext context, DateTime t) {
+    return '${t.day} ${monthAbbrev(context, t.month)} ${t.year}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -47,12 +47,12 @@ class RebookScreen extends StatelessWidget {
               child: const Icon(Icons.directions_bus_filled_outlined, size: 54, color: AppColors.primary),
             ),
             const SizedBox(height: 26),
-            const Text('Trip cancelled', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+            Text(l.rebookTitle, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
             const SizedBox(height: 10),
-            const Text(
-              'The driver has cancelled this trip.\nWould you like to find another trip?',
+            Text(
+              l.rebookBody,
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+              style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
             ),
             const SizedBox(height: 26),
             Container(
@@ -65,7 +65,7 @@ class RebookScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Original trip', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  Text(l.rebookOriginal, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                   const SizedBox(height: 4),
                   Text('${trip.originCity} → ${trip.destinationCity}',
                       style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -92,14 +92,14 @@ class RebookScreen extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 4),
-                  Text('${_dateLabel(trip.departureTime)} · ${_timeLabel(trip.departureTime)}',
+                  Text('${_dateLabel(context, trip.departureTime)} · ${_timeLabel(trip.departureTime)}',
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                 ],
               ),
             ),
             const SizedBox(height: 28),
             PrimaryButton(
-              label: 'Find Another Trip',
+              label: l.rebookFind,
               onPressed: () => Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (_) => SearchFormScreen(
@@ -115,7 +115,7 @@ class RebookScreen extends StatelessWidget {
                 MaterialPageRoute(builder: (_) => const MainTabScreen(initialIndex: 1)),
                 (route) => false,
               ),
-              child: const Text('Go to My Bookings'),
+              child: Text(l.rebookGoBookings),
             ),
             const SizedBox(height: 12),
           ],

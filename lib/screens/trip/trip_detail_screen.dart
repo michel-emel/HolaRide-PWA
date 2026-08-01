@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/trip.dart';
 import '../../services/auth_gate.dart';
 import '../../services/trip_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/date_labels.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/profile_icon_button.dart';
 import 'booking_request_screen.dart';
@@ -44,7 +46,6 @@ class _Mock {
   static const tripsCompleted = 25;
   static const estDurationMinutes = 210; // ~3h30
   static const estDistanceKm = 240;
-  static const luggagePerPassenger = '1 bag per passenger';
 }
 
 class _TripDetailScreenState extends State<TripDetailScreen> {
@@ -70,8 +71,9 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       // ignore: avoid_print
       print('Error in lib/screens/trip/trip_detail_screen.dart: $e');
       if (!mounted) return;
+      final l = AppLocalizations.of(context);
       setState(() {
-        _error = "Couldn't load this trip.";
+        _error = l.tripDetailLoadError;
         _loading = false;
       });
     }
@@ -89,10 +91,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   String _dateLabel(DateTime t) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${_weekday(t.weekday)}, ${t.day} ${months[t.month - 1]} ${t.year}';
+    return '${_weekday(t.weekday)}, ${t.day} ${monthAbbrev(context, t.month)} ${t.year}';
   }
 
   String _weekday(int w) =>
@@ -122,11 +121,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: const BackButton(),
-        title: const Text('Trip Details'),
+        title: Text(l.tripDetailAppBarTitle),
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -146,6 +146,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 
   Widget _buildBottomBar(Trip trip) {
+    final l = AppLocalizations.of(context);
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
@@ -164,12 +165,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Total price (1 seat)',
-                          style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                      Text(l.tripDetailTotalPriceLabel,
+                          style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
                       Text(_priceLabel(trip.pricePerSeat),
                           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.primary)),
                       // TODO(backend): "no hidden fees" is static copy, not a fee breakdown.
-                      const Text('No hidden fees', style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                      Text(l.tripDetailNoHiddenFees, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
                     ],
                   ),
                 ),
@@ -185,7 +186,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(trip.seatsAvailable > 0 ? 'Book a Seat' : 'No seats left',
+                        Text(trip.seatsAvailable > 0 ? l.tripDetailBook : l.tripDetailNoSeats,
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                         if (trip.seatsAvailable > 0) ...[
                           const SizedBox(width: 8),
@@ -208,7 +209,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 Icon(Icons.lock_outline, size: 12, color: AppColors.textSecondary),
                 const SizedBox(width: 4),
                 // TODO(backend): "secure booking" is static reassurance copy.
-                const Text('Secure booking', style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                Text(l.tripDetailSecureBooking, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
               ],
             ),
           ],
@@ -218,6 +219,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 
   Widget _buildContent(Trip trip) {
+    final l = AppLocalizations.of(context);
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
@@ -259,8 +261,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                               Text(
                                 trip.driverRatingCount > 0
                                     ? '${trip.driverRatingAverage?.toStringAsFixed(1)} · ${trip.driverRatingCount} '
-                                        '${trip.driverRatingCount == 1 ? "review" : "reviews"} for this driver'
-                                    : 'No driver reviews yet',
+                                        '${trip.driverRatingCount == 1 ? l.tripDetailReview : l.tripDetailReviews}'
+                                    : l.tripDetailNoReviews,
                                 style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                               ),
                             ],
@@ -286,12 +288,12 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                             child: const Icon(Icons.gpp_good, size: 16, color: Colors.white),
                           ),
                           const SizedBox(width: 8),
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Verified Trip', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Colors.black)),
-                              Text('Safe • Reliable • Trusted',
-                                  style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary)),
+                              Text(l.tripDetailVerifiedTrip, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5, color: Colors.black)),
+                              Text(l.tripDetailSafeReliableTrusted,
+                                  style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary)),
                             ],
                           ),
                         ],
@@ -300,7 +302,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Text('Price per seat', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                Text(l.waitingPricePerSeat, style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
                 const SizedBox(height: 2),
                 Text(_priceLabel(trip.pricePerSeat),
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.primary)),
@@ -327,7 +329,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                         iconColor: AppColors.primary,
                         city: trip.originCity,
                         point: trip.originLocation,
-                        tag: 'Departure',
+                        tag: l.tripDetailDepartureTag,
                         time: _timeLabel(trip.departureTime),
                       ),
                       const Padding(
@@ -342,7 +344,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                         iconColor: AppColors.gold,
                         city: trip.destinationCity,
                         point: trip.destinationLocation,
-                        tag: 'Arrival',
+                        tag: l.tripDetailArrivalTag,
                         // TODO(backend): drop "(est.)" once a real arrival time exists.
                         time: '${_timeLabel(_estArrival(trip.departureTime))} (est.)',
                       ),
@@ -387,6 +389,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 
   Widget _buildPromoBanner() {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -401,14 +404,14 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             child: const Icon(Icons.shield_outlined, size: 16, color: Colors.white),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Affordable, safe and reliable travel',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                Text('Book with confidence and enjoy your journey.',
-                    style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                Text(l.tripDetailPromoTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                Text(l.tripDetailPromoBody,
+                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
               ],
             ),
           ),
@@ -469,6 +472,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 
   Widget _buildTripFactsRow(Trip trip) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -495,7 +499,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             Expanded(
               flex: 4,
               child: _factItem(
-                label: 'Vehicle category',
+                label: l.tripDetailVehicleCategory,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(20)),
@@ -510,8 +514,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             flex: 3,
             child: _factItem(
               icon: Icons.event_seat_outlined,
-              label: 'Seats available',
-              value: '${trip.seatsAvailable} seat${trip.seatsAvailable == 1 ? '' : 's'} left',
+              label: l.tripDetailSeatsAvailable,
+              value: trip.seatsAvailable == 1
+                  ? l.tripDetailSeatsLeftSingular(trip.seatsAvailable)
+                  : l.tripDetailSeatsLeftPlural(trip.seatsAvailable),
             ),
           ),
           const SizedBox(width: 8),
@@ -520,8 +526,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             flex: 3,
             child: _factItem(
               icon: Icons.luggage_outlined,
-              label: 'Luggage',
-              value: _Mock.luggagePerPassenger,
+              label: l.tripDetailLuggageLabel,
+              value: l.tripDetailLuggageValue,
             ),
           ),
         ],
@@ -547,6 +553,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   // mock data (_Mock) — there is no driver name/photo/verification/
   // trip-count field on TripOut. Replace once the backend adds one.
   Widget _buildDriverCard(Trip trip) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -587,7 +594,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Driver', style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                    Text(l.chatInboxDriver, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
                     const Text(_Mock.driverName, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                     const SizedBox(height: 4),
                     if (_Mock.driverVerified)
@@ -597,8 +604,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                           color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Text('Verified driver',
-                            style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w600)),
+                        child: Text(l.tripDetailVerifiedDriverBadge,
+                            style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w600)),
                       ),
                   ],
                 ),
@@ -617,8 +624,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                 style: const TextStyle(fontWeight: FontWeight.w800)),
                           ],
                         ),
-                        Text('${trip.driverRatingCount} '
-                                '${trip.driverRatingCount == 1 ? "review" : "reviews"}',
+                        Text(
+                            trip.driverRatingCount == 1
+                                ? l.tripDetailReviewCountBare(trip.driverRatingCount)
+                                : l.tripDetailReviewCountBarePlural(trip.driverRatingCount),
                             style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                       ],
                     ),
@@ -634,10 +643,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (_Mock.idVerified) _verifiedChip(Icons.shield_outlined, 'ID Verified'),
-              if (_Mock.phoneVerified) _verifiedChip(Icons.smartphone_outlined, 'Phone Verified'),
-              if (_Mock.backgroundChecked) _verifiedChip(Icons.check_circle_outline, 'Background Checked'),
-              _verifiedChip(Icons.route_outlined, '${_Mock.tripsCompleted} Trips completed', trailingChevron: true),
+              if (_Mock.idVerified) _verifiedChip(Icons.shield_outlined, l.tripDetailIdVerified),
+              if (_Mock.phoneVerified) _verifiedChip(Icons.smartphone_outlined, l.tripDetailPhoneVerified),
+              if (_Mock.backgroundChecked) _verifiedChip(Icons.check_circle_outline, l.tripDetailBackgroundChecked),
+              _verifiedChip(Icons.route_outlined, l.tripDetailTripsCompleted(_Mock.tripsCompleted), trailingChevron: true),
             ],
           ),
           const SizedBox(height: 12),
@@ -648,7 +657,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             child: OutlinedButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Driver profile coming soon')),
+                  SnackBar(content: Text(l.tripDetailDriverProfileSoon)),
                 );
               },
               style: OutlinedButton.styleFrom(
@@ -658,13 +667,13 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.person_outline, size: 18, color: AppColors.primary),
-                  SizedBox(width: 8),
-                  Text('Know more about the driver',
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
-                  SizedBox(width: 4),
-                  Icon(Icons.chevron_right, size: 18, color: AppColors.primary),
+                children: [
+                  const Icon(Icons.person_outline, size: 18, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(l.tripDetailKnowMoreDriver,
+                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, size: 18, color: AppColors.primary),
                 ],
               ),
             ),
@@ -694,6 +703,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 
   Widget _buildSafetyBanner() {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -708,20 +718,20 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             child: const Icon(Icons.shield_outlined, color: Colors.white, size: 16),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Your safety is our priority', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                Text('SOS, live location sharing and in-app chat available.',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Text(l.safetyPriorityTitle, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                Text(l.safetyPriorityBody,
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),
           Row(
-            children: const [
-              Text('Learn more', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12.5)),
-              Icon(Icons.chevron_right, color: AppColors.primary, size: 18),
+            children: [
+              Text(l.learnMore, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12.5)),
+              const Icon(Icons.chevron_right, color: AppColors.primary, size: 18),
             ],
           ),
         ],

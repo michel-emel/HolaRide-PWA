@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../config/google_maps_config.dart';
@@ -38,7 +39,10 @@ class RouteService {
     required double destLat,
     required double destLng,
   }) async {
-    if (GoogleMapsConfig.apiKey.isEmpty) return null;
+    if (GoogleMapsConfig.apiKey.isEmpty) {
+      debugPrint('RouteService: GOOGLE_MAPS_API_KEY is empty, skipping computeRoutes call.');
+      return null;
+    }
     try {
       final res = await http
           .post(
@@ -68,10 +72,16 @@ class RouteService {
           )
           .timeout(const Duration(seconds: 8));
 
-      if (res.statusCode != 200) return null;
+      if (res.statusCode != 200) {
+        debugPrint('RouteService: computeRoutes failed (${res.statusCode}): ${res.body}');
+        return null;
+      }
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       final routes = data['routes'] as List?;
-      if (routes == null || routes.isEmpty) return null;
+      if (routes == null || routes.isEmpty) {
+        debugPrint('RouteService: computeRoutes returned no routes.');
+        return null;
+      }
       final route = routes.first as Map<String, dynamic>;
 
       // Duration comes back as a protobuf-style string, e.g. "248s".
@@ -86,7 +96,8 @@ class RouteService {
         duration: Duration(seconds: seconds),
         points: encoded == null ? const [] : _decodePolyline(encoded),
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('RouteService: computeRoutes threw: $e');
       return null;
     }
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_client.dart';
@@ -22,9 +23,10 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
   String? _error;
 
   Future<void> _continue() async {
+    final l = AppLocalizations.of(context);
     final name = _controller.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = 'Tell us what to call you.');
+      setState(() => _error = l.nameEntryError);
       return;
     }
     setState(() {
@@ -50,7 +52,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/onboarding/name_entry_screen.dart: $e');
-      setState(() => _error = 'Could not save your name. Try again.');
+      setState(() => _error = l.nameEntrySaveError);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -64,6 +66,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(backgroundColor: AppColors.surface, elevation: 0),
@@ -85,21 +88,21 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                 ),
               ),
               const SizedBox(height: 22),
-              const Text('What should\nwe call you?',
+              Text(l.nameEntryTitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, height: 1.25)),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, height: 1.25)),
               const SizedBox(height: 10),
-              const Text(
-                'This will be visible on your profile',
+              Text(
+                l.nameEntrySubtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 26),
               TextField(
                 controller: _controller,
                 textCapitalization: TextCapitalization.words,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                decoration: const InputDecoration(hintText: 'e.g. Michel Kamga'),
+                decoration: InputDecoration(hintText: l.nameEntryHint),
                 onChanged: (_) => setState(() => _error = null),
               ),
               if (_error != null) ...[
@@ -107,7 +110,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                 Text(_error!, style: const TextStyle(color: AppColors.danger, fontSize: 13)),
               ],
               const SizedBox(height: 22),
-              PrimaryButton(label: 'Continue', onPressed: _continue, loading: _loading),
+              PrimaryButton(label: l.registerContinue, onPressed: _continue, loading: _loading),
             ],
           ),
         ),

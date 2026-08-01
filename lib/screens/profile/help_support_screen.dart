@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_colors.dart';
 
 /// A simple support screen. There's no live support inbox wired up
@@ -14,23 +15,24 @@ class HelpSupportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Help & Support')),
+      appBar: AppBar(title: Text(l.helpTitle)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           _faqTile(
-            'How does payment work?',
-            'You pay through Mobile Money once a driver accepts your seat request — either the full fare, or a 20% deposit with the rest due before the trip.',
+            l.helpQ1,
+            l.helpA1,
           ),
           _faqTile(
-            'What if my driver cancels?',
-            'You\'ll be notified immediately and can search for another trip in one tap from your booking.',
+            l.helpQ2,
+            l.helpA2,
           ),
           _faqTile(
-            'How do I become a driver?',
-            'Go to Profile → Become a Driver, add your vehicle details and photos, and HolaRide will review and approve it.',
+            l.helpQ3,
+            l.helpA3,
           ),
           const SizedBox(height: 20),
           if (_supportEmail == null && _supportPhone == null)
@@ -40,9 +42,9 @@ class HelpSupportScreen extends StatelessWidget {
                 color: AppColors.warningBg,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Text(
-                'Direct support contact isn\'t set up yet in this build — add a real support email or phone number here before launch.',
-                style: TextStyle(color: AppColors.warning, fontSize: 12.5),
+              child: Text(
+                l.helpContactNote,
+                style: const TextStyle(color: AppColors.warning, fontSize: 12.5),
               ),
             )
           else
@@ -53,14 +55,14 @@ class HelpSupportScreen extends StatelessWidget {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.email_outlined, color: AppColors.primary),
-                    title: const Text('Email support'),
+                    title: Text(l.helpEmail),
                     subtitle: Text(_supportEmail!),
                   ),
                 if (_supportPhone != null)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.phone_outlined, color: AppColors.primary),
-                    title: const Text('Call support'),
+                    title: Text(l.helpCall),
                     subtitle: Text(_supportPhone!),
                   ),
               ],

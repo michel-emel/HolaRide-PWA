@@ -1253,4 +1253,624 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get welcomeSubtitle =>
       'Trajets confortables, abordables\net sûrs à travers le Cameroun.';
+
+  @override
+  String get liveTripConsentTitle => 'Partager votre position';
+
+  @override
+  String get liveTripConsentBody =>
+      'Pendant ce trajet, le conducteur pourra voir votre position en direct. Vous pouvez désactiver le partage à tout moment depuis l\'écran de suivi.';
+
+  @override
+  String get liveTripConsentDecline => 'Suivre sans partager';
+
+  @override
+  String get liveTripConsentAccept => 'Partager';
+
+  @override
+  String get liveTripEndedTitle => 'Trajet terminé';
+
+  @override
+  String get liveTripEndedBody =>
+      'Le partage de position a été arrêté automatiquement.';
+
+  @override
+  String get liveTripBack => 'Retour';
+
+  @override
+  String get liveTripSharingSubtitle => 'Partage de votre position en direct';
+
+  @override
+  String get liveTripFollowingSubtitle => 'Suivi de votre conducteur';
+
+  @override
+  String get liveTripMeMarker => 'Moi';
+
+  @override
+  String get liveTripLive => 'En direct';
+
+  @override
+  String liveTripUpdatedAgo(int secs) {
+    return 'Mis à jour il y a ${secs}s';
+  }
+
+  @override
+  String liveTripLastSeenAgo(int mins) {
+    return 'Vu il y a ${mins}min';
+  }
+
+  @override
+  String get liveTripWaitingSignal => 'En attente du signal...';
+
+  @override
+  String get liveTripDriverSeesPosition => 'Le conducteur voit votre position';
+
+  @override
+  String get liveTripSharingOff => 'Partage désactivé';
+
+  @override
+  String get liveTripSharingYourPosition => 'Vous partagez votre position';
+
+  @override
+  String get liveTripNoPassengerYet =>
+      'Aucune position de passager reçue pour l\'instant.';
+
+  @override
+  String liveTripPassengerVisible(int count) {
+    return '$count passager visible sur la carte.';
+  }
+
+  @override
+  String liveTripPassengersVisible(int count) {
+    return '$count passagers visibles sur la carte.';
+  }
+
+  @override
+  String liveTripRouteLabel(String km, String mins) {
+    return '$km km · $mins min';
+  }
+
+  @override
+  String get liveTripPermServiceDisabled =>
+      'Les services de localisation sont désactivés sur cet appareil.';
+
+  @override
+  String get liveTripPermDenied =>
+      'L\'autorisation de localisation a été refusée.';
+
+  @override
+  String get liveTripPermDeniedForever =>
+      'L\'autorisation de localisation est définitivement refusée — activez-la dans les réglages de votre téléphone.';
+
+  @override
+  String get onboardingSkip => 'Passer';
+
+  @override
+  String get onboardingNext => 'Suivant';
+
+  @override
+  String get onboardingLetsGo => 'C\'est parti !';
+
+  @override
+  String get onboardingBrandName => 'HolaRide';
+
+  @override
+  String get onboardingTagline => 'Partagez le trajet. Allez plus loin.';
+
+  @override
+  String get onboardingPage1TitleLine1 => 'Voyage intercité,\n';
+
+  @override
+  String get onboardingPage1TitleAccent => 'plus malin ';
+
+  @override
+  String get onboardingPage1TitleSuffix => 'ensemble';
+
+  @override
+  String get onboardingPage1Body =>
+      'Réservez un siège ou proposez un trajet vers\nvos villes préférées au Cameroun.\nSûr, abordable et fiable.';
+
+  @override
+  String get onboardingPage2TitlePrefix => 'Trouvez le bon trajet\npour ';
+
+  @override
+  String get onboardingPage2TitleAccent => 'votre voyage';
+
+  @override
+  String get onboardingPage2Body =>
+      'Recherchez des trajets entre villes, comparez les options,\nconsultez les profils des conducteurs et réservez votre siège\nen quelques clics.';
+
+  @override
+  String get onboardingPage3TitlePrefix => 'Voyagez en toute ';
+
+  @override
+  String get onboardingPage3TitleAccent => 'tranquillité\n';
+
+  @override
+  String get onboardingPage3TitleSuffix => 'd\'esprit';
+
+  @override
+  String get onboardingPage3Body =>
+      'Suivi du trajet en direct, paiements sécurisés et\nassistance 24h/24 — nous vous accompagnons\nà chaque étape.';
+
+  @override
+  String get onboardingFeatSafeTitle => 'Sûr et fiable';
+
+  @override
+  String get onboardingFeatSafeSub =>
+      'Conducteurs vérifiés\n& paiements sécurisés';
+
+  @override
+  String get onboardingFeatShareTitle => 'Trouvez ou partagez';
+
+  @override
+  String get onboardingFeatShareSub =>
+      'Choisissez votre trajet\nou proposez des sièges';
+
+  @override
+  String get onboardingFeatAffordableTitle => 'Abordable';
+
+  @override
+  String get onboardingFeatAffordableSub =>
+      'Meilleurs prix\npour chaque trajet';
+
+  @override
+  String get onboardingFeatRoutesTitle => 'De nombreux itinéraires';
+
+  @override
+  String get onboardingFeatRoutesSub => 'À travers le Cameroun';
+
+  @override
+  String get onboardingFeatPricesTitle => 'Excellents prix';
+
+  @override
+  String get onboardingFeatPricesSub => 'Sans frais cachés';
+
+  @override
+  String get onboardingFeatBookingTitle => 'Réservation rapide';
+
+  @override
+  String get onboardingFeatBookingSub => 'En quelques clics';
+
+  @override
+  String get onboardingFeatPaymentsTitle => 'Paiements sécurisés';
+
+  @override
+  String get onboardingFeatPaymentsSub => 'Votre argent est protégé';
+
+  @override
+  String get onboardingFeatTrackingTitle => 'Suivi du trajet en direct';
+
+  @override
+  String get onboardingFeatTrackingSub => 'Suivez votre trajet en temps réel';
+
+  @override
+  String get onboardingFeatSupportTitle => 'Assistance 24h/24';
+
+  @override
+  String get onboardingFeatSupportSub => 'Nous sommes là pour vous aider';
+
+  @override
+  String get onboardingFooterTagline =>
+      'Bâtir un Cameroun connecté, un trajet à la fois.';
+
+  @override
+  String get searchHeroTitlePrefix => 'Trouver ';
+
+  @override
+  String get searchHeroTitleAccent => 'votre trajet';
+
+  @override
+  String get searchHeroSubtitle =>
+      'Trouvez des trajets confortables\nentre les villes.';
+
+  @override
+  String get searchQuickRoutesTitle => 'Itinéraires rapides';
+
+  @override
+  String get searchQuickRoutesHint =>
+      'Appuyez sur un itinéraire pour remplir votre recherche instantanément.';
+
+  @override
+  String get searchTrustPaymentsTitle => 'Paiements sécurisés';
+
+  @override
+  String get searchTrustPaymentsSubtitle => 'Vos données sont protégées';
+
+  @override
+  String get searchTrustCommunityTitle => 'Communauté de confiance';
+
+  @override
+  String get searchTrustCommunitySubtitle => 'Conducteurs vérifiés';
+
+  @override
+  String get searchTrustSupportTitle => 'Assistance 24/7';
+
+  @override
+  String get searchTrustSupportSubtitle => 'Nous sommes là pour vous';
+
+  @override
+  String get searchResultsPassengerSingular => 'passager';
+
+  @override
+  String get searchResultsPassengerPlural => 'passagers';
+
+  @override
+  String get homeJoinPopupBody =>
+      'Connectez-vous pour réserver des trajets et rencontrer des conducteurs vérifiés.';
+
+  @override
+  String get homeHeroTravelSmarterTitle =>
+      'Voyagez plus intelligemment,\nÉconomisez plus';
+
+  @override
+  String get homeHeroTravelSmarterBody =>
+      'Partagez les frais avec d\'autres voyageurs qui vont dans votre direction.';
+
+  @override
+  String get homeHeroSafeTitle => 'Sûr &\nFiable';
+
+  @override
+  String get homeHeroSafeBody =>
+      'Tous les conducteurs sont vérifiés. Votre sécurité est notre priorité.';
+
+  @override
+  String get homeHeroCameroonTitle => 'À travers\nle Cameroun';
+
+  @override
+  String get homeHeroCameroonBody =>
+      'Yaoundé, Douala, Bafoussam et d\'autres destinations.';
+
+  @override
+  String get homeFindRideSubtitle =>
+      'Recherchez des trajets vers votre destination';
+
+  @override
+  String get homeOfferRide => 'Proposer un trajet';
+
+  @override
+  String get homeOfferRideSubtitle =>
+      'Publiez votre trajet et remplissez vos sièges vides';
+
+  @override
+  String get homeRideTogetherTitle => 'Voyagez ensemble, économisez plus';
+
+  @override
+  String get homeRideTogetherBody =>
+      'Partagez votre trajet, divisez\nles frais et réduisez les coûts.';
+
+  @override
+  String get homeLearnMore => 'En savoir plus';
+
+  @override
+  String get homeHappyRiders => 'Utilisateurs satisfaits\nde HolaRide';
+
+  @override
+  String homeTripsAvailableSingular(int count) {
+    return '$count trajet disponible';
+  }
+
+  @override
+  String homeTripsAvailablePlural(int count) {
+    return '$count trajets disponibles';
+  }
+
+  @override
+  String get splashTagline => 'Voyagez ensemble.\nÉconomisez plus.';
+
+  @override
+  String get splashTagSafe => 'Sûr';
+
+  @override
+  String get splashTagAffordable => 'Abordable';
+
+  @override
+  String get splashTagReliable => 'Fiable';
+
+  @override
+  String get splashFooter => 'Reliant les villes à travers le Cameroun 🇨🇲';
+
+  @override
+  String get paymentChangeNumberTitle => 'Payer avec un autre numéro';
+
+  @override
+  String get paymentChangeNumberBody =>
+      'L\'invite Mobile Money sera envoyée à ce numéro.';
+
+  @override
+  String get paymentChangeNumberHint => '675 123 456';
+
+  @override
+  String get paymentChangeNumberError =>
+      'Entrez un numéro valide à 9 chiffres commençant par 6.';
+
+  @override
+  String get paymentUseThisNumber => 'Utiliser ce numéro';
+
+  @override
+  String get paymentUserCancelled =>
+      'Vous avez annulé le paiement sur votre téléphone.';
+
+  @override
+  String get paymentFailedGeneric =>
+      'Le paiement a échoué. Veuillez réessayer.';
+
+  @override
+  String get paymentProviderUnreachable =>
+      'Impossible de joindre le fournisseur de paiement. Réessayez.';
+
+  @override
+  String get paymentCloseBtn => 'Fermer';
+
+  @override
+  String get payRemainingTitle => 'Payer le solde restant';
+
+  @override
+  String get payRemainingDepositPaid => 'Acompte de 20 % payé';
+
+  @override
+  String get payRemainingBalanceLabel => 'Solde restant';
+
+  @override
+  String get payRemainingMomoNumber => 'Numéro Mobile Money';
+
+  @override
+  String get payRemainingAutoDetectNote =>
+      'MTN ou Orange Money est détecté automatiquement — vous recevrez une invite USSD sur ce numéro.';
+
+  @override
+  String get payRemainingCheckPhoneNote =>
+      'Vérifiez votre téléphone — confirmez l\'invite Mobile Money pour terminer.';
+
+  @override
+  String get payRemainingWaitingLabel => 'En attente de confirmation...';
+
+  @override
+  String get payRemainingDevNote =>
+      'Visible uniquement en mode debug. Contourne le vrai Mobile Money — fonctionne uniquement si PAYMENT_DEV_MODE est activé côté serveur.';
+
+  @override
+  String get payRemainingSimulateError => 'Impossible de simuler le paiement.';
+
+  @override
+  String get payRemainingFailedMsg =>
+      'Le paiement a échoué. Vérifiez votre solde Mobile Money et réessayez.';
+
+  @override
+  String get payRemainingExpiredMsg =>
+      'La demande de paiement a expiré avant confirmation. Réessayez.';
+
+  @override
+  String get payRemainingStillWaitingMsg =>
+      'En attente de confirmation — vérifiez votre téléphone, puis réessayez si rien ne s\'est passé.';
+
+  @override
+  String get payRemainingGenericError =>
+      'Le paiement n\'a pas pu être finalisé. Réessayez.';
+
+  @override
+  String get tripDetailAppBarTitle => 'Détails du trajet';
+
+  @override
+  String get tripDetailLoadError => 'Impossible de charger ce trajet.';
+
+  @override
+  String get tripDetailTotalPriceLabel => 'Prix total (1 siège)';
+
+  @override
+  String get tripDetailNoHiddenFees => 'Aucun frais caché';
+
+  @override
+  String get tripDetailSecureBooking => 'Réservation sécurisée';
+
+  @override
+  String get tripDetailVerifiedTrip => 'Trajet vérifié';
+
+  @override
+  String get tripDetailSafeReliableTrusted => 'Sûr • Fiable • De confiance';
+
+  @override
+  String get tripDetailDepartureTag => 'Départ';
+
+  @override
+  String get tripDetailArrivalTag => 'Arrivée';
+
+  @override
+  String get tripDetailPromoTitle => 'Voyage abordable, sûr et fiable';
+
+  @override
+  String get tripDetailPromoBody =>
+      'Réservez en toute confiance et profitez de votre voyage.';
+
+  @override
+  String tripDetailSeatsLeftSingular(int count) {
+    return '$count siège restant';
+  }
+
+  @override
+  String tripDetailSeatsLeftPlural(int count) {
+    return '$count sièges restants';
+  }
+
+  @override
+  String get tripDetailLuggageLabel => 'Bagages';
+
+  @override
+  String get tripDetailLuggageValue => '1 bagage par passager';
+
+  @override
+  String get tripDetailVerifiedDriverBadge => 'Conducteur vérifié';
+
+  @override
+  String get tripDetailIdVerified => 'Identité vérifiée';
+
+  @override
+  String get tripDetailPhoneVerified => 'Téléphone vérifié';
+
+  @override
+  String get tripDetailBackgroundChecked => 'Vérification des antécédents';
+
+  @override
+  String tripDetailTripsCompleted(int count) {
+    return '$count trajets effectués';
+  }
+
+  @override
+  String tripDetailReviewCountBare(int count) {
+    return '$count avis';
+  }
+
+  @override
+  String tripDetailReviewCountBarePlural(int count) {
+    return '$count avis';
+  }
+
+  @override
+  String get tripDetailDriverProfileSoon =>
+      'Profil du conducteur bientôt disponible';
+
+  @override
+  String get tripDetailKnowMoreDriver => 'En savoir plus sur le conducteur';
+
+  @override
+  String get safetyPriorityTitle => 'Votre sécurité est notre priorité';
+
+  @override
+  String get safetyPriorityBody =>
+      'SOS, partage de position en direct et chat intégré disponibles.';
+
+  @override
+  String get learnMore => 'En savoir plus';
+
+  @override
+  String get bookingRequestSafeSecureTrusted => 'Sûr · Sécurisé · De confiance';
+
+  @override
+  String get bookingRequestSeatsQuestion =>
+      'De combien de sièges avez-vous besoin ?';
+
+  @override
+  String get bookingRequestSentHeading =>
+      'Votre demande sera envoyée au conducteur';
+
+  @override
+  String get bookingRequestNotPayingYet => 'Vous ne payez pas encore';
+
+  @override
+  String get bookingRequestSentBody =>
+      'Votre demande sera envoyée au conducteur. Vous ne paierez qu\'après acceptation de votre demande.';
+
+  @override
+  String bookingRequestPayFullSubtitle(String amount) {
+    return 'Payez $amount maintenant.';
+  }
+
+  @override
+  String get bookingRequestPayBalanceTag => 'Payer le solde avant le trajet';
+
+  @override
+  String get bookingRequestTotalToPay => 'Total à payer';
+
+  @override
+  String get bookingRequestPaidAfterAccept =>
+      '(payé après acceptation du conducteur)';
+
+  @override
+  String get cancellationWindowNote =>
+      'Vous pouvez annuler gratuitement jusqu\'à 2 heures avant le départ.';
+
+  @override
+  String get bookingRequestSendButton => 'Envoyer la demande au conducteur';
+
+  @override
+  String get bookingRequestSendSubtext =>
+      'Le conducteur doit accepter avant confirmation de la réservation';
+
+  @override
+  String get bookingRequestSendError =>
+      'Impossible d\'envoyer votre demande. Réessayez.';
+
+  @override
+  String get waitingWhatsNext => 'Que se passe-t-il ensuite ?';
+
+  @override
+  String get waitingStepRequestSent => 'Demande envoyée';
+
+  @override
+  String get waitingStepDriverNotified => 'Conducteur notifié';
+
+  @override
+  String get waitingStepDriverResponds => 'Le conducteur répond';
+
+  @override
+  String get waitingNotifyHeading => 'Nous vous notifierons immédiatement';
+
+  @override
+  String get waitingNotifyBody =>
+      'Vous pouvez continuer à utiliser l\'application.\nNous vous préviendrons dès que le conducteur accepte.';
+
+  @override
+  String get waitingGoHomeButton => 'Retour à l\'accueil';
+
+  @override
+  String get orDivider => 'ou';
+
+  @override
+  String get waitingResponseTimeBanner =>
+      'La plupart des conducteurs répondent en 5 à 10 minutes.';
+
+  @override
+  String get chatHideChatBody =>
+      'Ceci le supprime uniquement de votre propre liste — l\'autre partie conserve sa conversation normalement. Si un nouveau message arrive plus tard, il réapparaîtra dans votre liste.';
+
+  @override
+  String get chatHideChatError =>
+      'Impossible de supprimer cette conversation. Réessayez.';
+
+  @override
+  String get driverFlowLoginReason =>
+      'Connectez-vous pour publier un trajet en tant que conducteur.';
+
+  @override
+  String get payoutRowLabel => 'Versement';
+
+  @override
+  String get tripMgmtStartTitle => 'Démarrer ce trajet ?';
+
+  @override
+  String get tripMgmtStartBody =>
+      'Le trajet sera marqué comme en cours. Vos passagers ayant payé pourront suivre votre position en direct jusqu\'à ce que vous le marquiez comme terminé.';
+
+  @override
+  String get tripMgmtNotYet => 'Pas encore';
+
+  @override
+  String get tripMgmtStartBtn => 'Démarrer le trajet';
+
+  @override
+  String get tripMgmtStarting => 'Démarrage...';
+
+  @override
+  String get tripMgmtStartedMsg =>
+      'Trajet démarré — les passagers peuvent maintenant vous suivre.';
+
+  @override
+  String get tripMgmtStartError =>
+      'Impossible de démarrer le trajet. Réessayez.';
+
+  @override
+  String get tripMgmtInProgressBanner =>
+      'Trajet en cours — appuyez pour ouvrir la carte en direct.';
+
+  @override
+  String get tripMgmtAcceptTooltip => 'Accepter';
+
+  @override
+  String get tripMgmtRejectTooltip => 'Refuser';
+
+  @override
+  String get tripMgmtNoShowFallbackName => 'ce passager';
+
+  @override
+  String get tripMgmtDoneFallback => 'Terminé.';
 }

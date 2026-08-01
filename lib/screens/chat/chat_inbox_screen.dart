@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
+import '../../utils/date_labels.dart';
 import '../../models/booking.dart';
 import '../../services/booking_service.dart';
 import '../../services/chat_service.dart';
@@ -130,15 +132,15 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
   }
 
   String _dateLabel(DateTime t) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${t.day} ${months[t.month - 1]} · ${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+    return '${t.day} ${monthAbbrev(context, t.month)} · ${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: buildAppHeader('Chat'),
+      appBar: buildAppHeader(l.chatInboxTitle),
       body: RefreshIndicator(
         onRefresh: _load,
         child: _loading
@@ -151,17 +153,17 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                         children: [
                           const Icon(Icons.chat_bubble_outline, size: 48, color: AppColors.textSecondary),
                           const SizedBox(height: 12),
-                          const Center(
-                            child: Text('No chats yet',
-                                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                          Center(
+                            child: Text(l.chatInboxEmpty,
+                                style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
                           ),
                           const SizedBox(height: 6),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 40),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
                             child: Text(
-                              'Chats open automatically once a booking is paid, or for any trip you publish.',
+                              l.chatInboxEmptyHint,
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
                             ),
                           ),
                         ],
@@ -191,20 +193,19 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                                 builder: (_) => AlertDialog(
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(16)),
-                                  title: const Text('Delete chat?'),
-                                  content: const Text(
-                                      'This removes the chat from your list. The trip and your booking are not affected.'),
+                                  title: Text(l.chatInboxDeleteTitle),
+                                  content: Text(l.chatInboxDeleteBody),
                                   actions: [
                                     TextButton(
                                       onPressed: () =>
                                           Navigator.of(context).pop(false),
-                                      child: const Text('Cancel'),
+                                      child: Text(l.cancel),
                                     ),
                                     TextButton(
                                       onPressed: () =>
                                           Navigator.of(context).pop(true),
-                                      child: const Text('Delete',
-                                          style: TextStyle(
+                                      child: Text(l.chatInboxDelete,
+                                          style: const TextStyle(
                                               color: AppColors.danger)),
                                     ),
                                   ],
@@ -302,7 +303,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(20)),
                                     child: Text(
-                                      e.isDriver ? 'Driver' : 'Passenger',
+                                      e.isDriver ? l.chatInboxDriver : l.chatInboxPassenger,
                                       style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.primary),
                                     ),
                                   ),

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
+import '../../utils/date_labels.dart';
 import '../../models/booking.dart';
 import '../../models/payment_status.dart';
 import '../../models/user.dart';
@@ -9,6 +10,7 @@ import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/profile_icon_button.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Screen 13 — Pay remaining balance.
 ///
@@ -59,6 +61,7 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
   /// explanation. Same backend endpoint, same server-side 404 unless
   /// `PAYMENT_DEV_MODE` is on, same `kDebugMode` gate on this button.
   Future<void> _simulatePayment() async {
+    final l = AppLocalizations.of(context);
     setState(() {
       _paying = true;
       _error = null;
@@ -72,13 +75,14 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/payment/pay_remaining_screen.dart: $e');
-      setState(() => _error = 'Could not simulate payment.');
+      setState(() => _error = l.payRemainingSimulateError);
     } finally {
       if (mounted) setState(() => _paying = false);
     }
   }
 
   Future<void> _pay() async {
+    final l = AppLocalizations.of(context);
     setState(() {
       _paying = true;
       _error = null;
@@ -95,9 +99,9 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
         Navigator.of(context).pop(true);
       } else {
         setState(() => _error = switch (status) {
-              PaymentStatus.failed => 'The payment failed. Check your Mobile Money balance and try again.',
-              PaymentStatus.expired => 'The payment request expired before you confirmed it. Try again.',
-              _ => 'Still waiting on confirmation — check your phone, then try again if nothing came through.',
+              PaymentStatus.failed => l.payRemainingFailedMsg,
+              PaymentStatus.expired => l.payRemainingExpiredMsg,
+              _ => l.payRemainingStillWaitingMsg,
             });
       }
     } on ApiException catch (e) {
@@ -105,7 +109,7 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/payment/pay_remaining_screen.dart: $e');
-      setState(() => _error = 'Payment could not be completed. Try again.');
+      setState(() => _error = l.payRemainingGenericError);
     } finally {
       if (mounted) {
         setState(() {
@@ -120,20 +124,18 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   String _dateLabel(DateTime t) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${t.day} ${months[t.month - 1]} ${t.year}';
+    return '${t.day} ${monthAbbrev(context, t.month)} ${t.year}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final booking = widget.booking;
     final trip = booking.trip;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Pay remaining balance'),
+        title: Text(l.payRemainingTitle),
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -199,7 +201,7 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('20% deposit paid', style: TextStyle(fontWeight: FontWeight.w700)),
+                    Text(l.payRemainingDepositPaid, style: const TextStyle(fontWeight: FontWeight.w700)),
                     Text(_money(booking.amountPaid),
                         style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                   ],
@@ -217,7 +219,7 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Remaining balance', style: TextStyle(color: AppColors.textSecondary)),
+                Text(l.payRemainingBalanceLabel, style: const TextStyle(color: AppColors.textSecondary)),
                 Text(_money(booking.amountDue),
                     style: const TextStyle(
                         fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primary)),
@@ -239,8 +241,8 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Mobile Money number',
-                          style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                      Text(l.payRemainingMomoNumber,
+                          style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
                       Text(
                         _user?.phone ?? '...',
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
@@ -252,11 +254,11 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
             ),
           ),
           const SizedBox(height: 6),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              'MTN or Orange Money is detected automatically — you\'ll get a USSD prompt on this number.',
-              style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+              l.payRemainingAutoDetectNote,
+              style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
             ),
           ),
           if (_waitingConfirmation) ...[
@@ -267,14 +269,14 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
                 color: AppColors.infoBg,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.2)),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.2)),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Check your phone — confirm the Mobile Money prompt to finish.',
-                      style: TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
+                      l.payRemainingCheckPhoneNote,
+                      style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
@@ -287,7 +289,7 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
           ],
           const SizedBox(height: 20),
           PrimaryButton(
-            label: _waitingConfirmation ? 'Waiting for confirmation...' : 'Pay ${_money(booking.amountDue)}',
+            label: _waitingConfirmation ? l.payRemainingWaitingLabel : l.paymentPay(_money(booking.amountDue)),
             onPressed: _pay,
             loading: _paying,
           ),
@@ -296,18 +298,17 @@ class _PayRemainingScreenState extends State<PayRemainingScreen> {
             OutlinedButton.icon(
               onPressed: (_paying || _waitingConfirmation) ? null : _simulatePayment,
               icon: const Icon(Icons.bug_report_outlined, size: 18),
-              label: const Text('Simulate payment (dev only)'),
+              label: Text(l.paymentSimulate),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.warning,
                 side: const BorderSide(color: AppColors.warning),
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Only visible in debug builds. Bypasses real Mobile Money — '
-              'works only while PAYMENT_DEV_MODE is on in the backend.',
+            Text(
+              l.payRemainingDevNote,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ],
         ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/location.dart';
 import '../../services/location_service.dart';
 import '../../theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Screen 6 — Location picker.
 ///
@@ -81,6 +82,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(title: Text(widget.title)),
@@ -93,9 +95,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               controller: _controller,
               autofocus: true,
               onChanged: _onChanged,
-              decoration: const InputDecoration(
-                hintText: 'Search city or pickup point',
-                prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+              decoration: InputDecoration(
+                hintText: l.searchPickerHint,
+                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
               ),
             ),
             const SizedBox(height: 18),
@@ -111,10 +113,11 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   }
 
   Widget _buildPopularCities() {
+    final l = AppLocalizations.of(context);
     return ListView(
       children: [
-        const Text('Popular cities',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+        Text(l.searchPopularCities,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
         const SizedBox(height: 8),
         ..._popularCities.map(
           (c) => ListTile(
@@ -133,8 +136,8 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.4));
     }
     if (_results.isEmpty) {
-      return const Center(
-        child: Text('No matching locations.', style: TextStyle(color: AppColors.textSecondary)),
+      return Center(
+        child: Text(AppLocalizations.of(context).searchNoMatch, style: const TextStyle(color: AppColors.textSecondary)),
       );
     }
     return ListView.separated(

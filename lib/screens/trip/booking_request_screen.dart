@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/booking.dart';
 import '../../models/trip.dart';
 import '../../services/api_client.dart';
@@ -26,11 +27,6 @@ class BookingRequestScreen extends StatefulWidget {
 
   @override
   State<BookingRequestScreen> createState() => _BookingRequestScreenState();
-}
-
-/// TODO(backend): replace once this has a real field/endpoint.
-class _Mock {
-  static const cancellationWindow = 'You can cancel for free up to 2 hours before departure.';
 }
 
 class _BookingRequestScreenState extends State<BookingRequestScreen> {
@@ -82,7 +78,9 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/trip/booking_request_screen.dart: $e');
-      setState(() => _error = 'Could not send your request. Try again.');
+      if (!mounted) return;
+      final l = AppLocalizations.of(context);
+      setState(() => _error = l.bookingRequestSendError);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -91,11 +89,12 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   @override
   Widget build(BuildContext context) {
     final trip = widget.trip;
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: const BackButton(),
-        title: const Text('Request a Seat'),
+        title: Text(l.bookingRequestTitle),
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -110,8 +109,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(20)),
-                child: const Text('Step 1 of 2',
-                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                child: Text(l.bookingRequestStep,
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
               ),
               const Spacer(),
               // Static reassurance copy — same pattern as the "Verified
@@ -124,11 +123,11 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.verified_user, size: 14, color: AppColors.primary),
-                    SizedBox(width: 6),
-                    Text('Safe · Secure · Trusted',
-                        style: TextStyle(color: AppColors.primary, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                  children: [
+                    const Icon(Icons.verified_user, size: 14, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(l.bookingRequestSafeSecureTrusted,
+                        style: const TextStyle(color: AppColors.primary, fontSize: 11.5, fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -152,6 +151,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   }
 
   Widget _buildSeatsCard(Trip trip) {
+    final l = AppLocalizations.of(context);
     // Show at most 5 seat pictograms so the row never overflows on
     // small screens; the pictograms light up with the current selection.
     final iconCount = trip.seatsAvailable > 5 ? 5 : trip.seatsAvailable;
@@ -168,8 +168,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('How many seats do you need?',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
+          Text(l.bookingRequestSeatsQuestion,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
           const SizedBox(height: 14),
           Row(
             children: [
@@ -187,7 +187,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text('${trip.seatsAvailable} seats available',
+                child: Text(l.bookingRequestSeatsAvailable(trip.seatsAvailable),
                     style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
               ),
               const SizedBox(width: 8),
@@ -210,6 +210,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   }
 
   Widget _buildRequestNoticeCard() {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -223,8 +224,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Your request will be sent to the driver',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
+          Text(l.bookingRequestSentHeading,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.all(14),
@@ -245,12 +246,12 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("You're not paying yet",
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: Colors.black)),
+                      Text(l.bookingRequestNotPayingYet,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5, color: Colors.black)),
                       const SizedBox(height: 3),
-                      const Text(
-                        "Your request will be sent to the driver. You'll only pay after the driver accepts your request.",
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.35),
+                      Text(
+                        l.bookingRequestSentBody,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.35),
                       ),
                     ],
                   ),
@@ -294,6 +295,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   }
 
   Widget _buildPaymentSummaryCard(Trip trip) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -307,13 +309,13 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Payment option',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
+          Text(l.bookingRequestPayment,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primary)),
           const SizedBox(height: 12),
           _PaymentOptionTile(
             icon: Icons.check_circle_outline,
-            title: 'Pay Full',
-            subtitle: 'Pay ${_money(_total)} now.',
+            title: l.bookingRequestPayFull,
+            subtitle: l.bookingRequestPayFullSubtitle(_money(_total)),
             price: _money(_total),
             selected: _paymentOption == PaymentOption.full,
             onTap: () => setState(() => _paymentOption = PaymentOption.full),
@@ -321,10 +323,10 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
           const SizedBox(height: 10),
           _PaymentOptionTile(
             icon: Icons.percent,
-            title: 'Pay 80% Deposit',
-            subtitle: 'Pay ${_money(_depositDueNow)} now,\n${_money(_depositRemaining)} before the trip.',
+            title: l.bookingRequestPayDeposit,
+            subtitle: l.bookingRequestDepositHint(_money(_depositDueNow), _money(_depositRemaining)),
             price: _money(_depositDueNow),
-            tag: 'Pay balance before trip',
+            tag: l.bookingRequestPayBalanceTag,
             selected: _paymentOption == PaymentOption.deposit,
             onTap: () => setState(() => _paymentOption = PaymentOption.deposit),
           ),
@@ -332,18 +334,18 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text('Total to pay',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Colors.black)),
+              Text(l.bookingRequestTotalToPay,
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Colors.black)),
               const SizedBox(width: 6),
-              const Text('(paid after driver accepts)',
-                  style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+              Text(l.bookingRequestPaidAfterAccept,
+                  style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
             ],
           ),
           const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Price per seat', style: TextStyle(fontSize: 13.5, color: Colors.black)),
+              Text(l.waitingPricePerSeat, style: const TextStyle(fontSize: 13.5, color: Colors.black)),
               Text(_money(trip.pricePerSeat), style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
             ],
           ),
@@ -351,7 +353,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Seats', style: TextStyle(fontSize: 13.5, color: Colors.black)),
+              Text(l.bookingRequestSeats, style: const TextStyle(fontSize: 13.5, color: Colors.black)),
               Text('$_seats', style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
             ],
           ),
@@ -361,7 +363,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(_paymentOption == PaymentOption.deposit ? 'Due now' : 'Total amount',
+              Text(_paymentOption == PaymentOption.deposit ? l.bookingRequestDueNow : l.bookingRequestTotal,
                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: Colors.black)),
               Text(
                 _money(_paymentOption == PaymentOption.deposit ? _depositDueNow : _total),
@@ -374,8 +376,8 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Remaining before trip',
-                    style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                Text(l.bookingRequestRemaining,
+                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
                 Text(_money(_depositRemaining),
                     style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
               ],
@@ -399,6 +401,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   // TODO(backend): cancellation window is static copy — confirm the
   // real policy value with backend and wire it up if it can vary.
   Widget _buildCancellationBanner() {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -411,7 +414,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
           Icon(Icons.info_outline, size: 18, color: AppColors.gold),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(_Mock.cancellationWindow,
+            child: Text(l.cancellationWindowNote,
                 style: const TextStyle(fontSize: 12.5, color: Colors.black, fontWeight: FontWeight.w500)),
           ),
         ],
@@ -420,6 +423,7 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   }
 
   Widget _buildSubmitButton() {
+    final l = AppLocalizations.of(context);
     return SizedBox(
       width: double.infinity,
       height: 62,
@@ -437,12 +441,12 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
                 children: [
                   Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text('Send Request to Driver',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
-                      SizedBox(height: 2),
-                      Text('Driver must accept before booking is confirmed',
-                          style: TextStyle(color: Colors.white70, fontSize: 11.5)),
+                    children: [
+                      Text(l.bookingRequestSendButton,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15.5)),
+                      const SizedBox(height: 2),
+                      Text(l.bookingRequestSendSubtext,
+                          style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
                     ],
                   ),
                   const SizedBox(width: 14),
@@ -458,15 +462,16 @@ class _BookingRequestScreenState extends State<BookingRequestScreen> {
   }
 
   Widget _buildFooterNote() {
+    final l = AppLocalizations.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.shield_outlined, size: 14, color: AppColors.primary),
         const SizedBox(width: 6),
-        const Text('Your safety is our priority. ',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-        const Text('Learn more',
-            style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
+        Text('${l.safetyPriorityTitle}. ',
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        Text(l.learnMore,
+            style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
       ],
     );
   }

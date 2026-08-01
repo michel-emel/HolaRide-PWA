@@ -30,6 +30,10 @@ class LivePosition {
   });
 }
 
+/// GPS permission failure reasons — mapped to a localized message by the
+/// UI (AppLocalizations), never surfaced as raw text from this service.
+enum LocationPermissionError { serviceDisabled, denied, deniedForever }
+
 /// Live location sharing for an ongoing trip.
 ///
 /// UPLOAD  : geolocator stream → POST /trips/{id}/position (via ApiClient,
@@ -133,19 +137,20 @@ class LocationSharingService {
 
   // ── Permission GPS ──────────────────────────────────────────────────
 
-  /// Retourne null si OK, sinon un message d'erreur à afficher.
-  Future<String?> ensurePermission() async {
+  /// Retourne null si OK, sinon un code d'erreur — le texte affiché à
+  /// l'utilisateur est localisé côté UI (AppLocalizations), pas ici.
+  Future<LocationPermissionError?> ensurePermission() async {
     final enabled = await Geolocator.isLocationServiceEnabled();
-    if (!enabled) return 'Location services are disabled on this device.';
+    if (!enabled) return LocationPermissionError.serviceDisabled;
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
     if (permission == LocationPermission.denied) {
-      return 'Location permission was denied.';
+      return LocationPermissionError.denied;
     }
     if (permission == LocationPermission.deniedForever) {
-      return 'Location permission is permanently denied — enable it in your phone settings.';
+      return LocationPermissionError.deniedForever;
     }
     return null;
   }
@@ -160,7 +165,7 @@ class LocationSharingService {
   /// démarre quand même, mais l'upload de MA position ne démarre pas.
   /// Par défaut true (comportement inchangé pour le driver et pour tout
   /// appelant existant).
-  Future<String?> start(String tripId, {bool shareLocation = true}) async {
+  Future<LocationPermissionError?> start(String tripId, {bool shareLocation = true}) async {
     await stop(); // repartir propre si un ancien trajet traînait
     _stopped = false;
     _tripId = tripId;

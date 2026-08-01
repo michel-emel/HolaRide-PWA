@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/vehicle.dart';
 import '../../services/vehicle_service.dart';
 import '../../theme/app_colors.dart';
@@ -54,7 +55,7 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
       print('Error in lib/screens/driver/vehicle_status_screen.dart: $e');
       if (!mounted) return;
       setState(() {
-        _error = "Couldn't load your vehicle status.";
+        _error = AppLocalizations.of(context).vehicleStatusLoadError;
         _loading = false;
       });
     }
@@ -83,7 +84,7 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
       // ignore: avoid_print
       print('Error in lib/screens/driver/vehicle_status_screen.dart: $e');
       if (!mounted) return;
-      setState(() => _uploadError = "Some photos didn't upload. Try again.");
+      setState(() => _uploadError = AppLocalizations.of(context).vehicleStatusPhotoError);
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -91,9 +92,10 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('My Vehicle')),
+      appBar: AppBar(title: Text(l.profileMyVehicle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator(strokeWidth: 2.4))
           : _error != null
@@ -105,6 +107,7 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
   }
 
   Widget _buildNoVehicle() {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
@@ -113,14 +116,14 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
           children: [
             const Icon(Icons.directions_car_outlined, size: 48, color: AppColors.textSecondary),
             const SizedBox(height: 12),
-            const Text("You haven't added a vehicle yet.",
-                textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
+            Text(l.vehicleStatusNoVehicle,
+                textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const VehicleRegistrationScreen()),
               ),
-              child: const Text('Add your vehicle'),
+              child: Text(l.vehicleStatusAdd),
             ),
           ],
         ),
@@ -129,6 +132,7 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
   }
 
   Widget _buildVehicle(Vehicle v) {
+    final l = AppLocalizations.of(context);
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
@@ -154,7 +158,8 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(v.makeModel, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                      Text('${v.plateNumber} · ${v.totalSeats} seats',
+                      Text(
+                          '${v.plateNumber} · ${v.totalSeats > 1 ? l.bookingsSeatPlural(v.totalSeats) : l.bookingsSeatSingular(v.totalSeats)}',
                           style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     ],
                   ),
@@ -168,13 +173,13 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Photos', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+              Text(l.vehicleStatusPhotos, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
               TextButton.icon(
                 onPressed: _uploading ? null : _addPhotos,
                 icon: _uploading
                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.add_photo_alternate_outlined, size: 18),
-                label: Text(_uploading ? 'Uploading...' : 'Add Photos'),
+                label: Text(_uploading ? l.vehicleStatusUploading : l.vehicleStatusAddPhotos),
               ),
             ],
           ),
@@ -191,9 +196,9 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
                 color: AppColors.infoBg,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Center(
-                child: Text('No photos yet — add a few so passengers recognize your car.',
-                    textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+              child: Center(
+                child: Text(l.vehicleStatusNoPhotos,
+                    textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
               ),
             )
           else
@@ -226,7 +231,7 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const CreateTripScreen()),
               ),
-              child: const Text('Create your first trip'),
+              child: Text(l.vehicleStatusFirstTrip),
             ),
           ],
         ],
@@ -235,6 +240,7 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
   }
 
   Widget _statusBanner(Vehicle v) {
+    final l = AppLocalizations.of(context);
     final Color bg;
     final Color fg;
     final String message;
@@ -242,22 +248,22 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
       case VehicleStatus.pending:
         bg = AppColors.warningBg;
         fg = AppColors.warning;
-        message = "We are verifying your documents and vehicle. You'll be notified once it's approved.";
+        message = l.vehicleStatusPending;
         break;
       case VehicleStatus.approved:
         bg = AppColors.successBg;
         fg = AppColors.success;
-        message = 'Your vehicle is approved — you can publish trips now.';
+        message = l.vehicleStatusApproved;
         break;
       case VehicleStatus.rejected:
         bg = AppColors.dangerBg;
         fg = AppColors.danger;
-        message = 'Your submission was rejected. Contact support for details, or submit a new vehicle.';
+        message = l.vehicleStatusRejected;
         break;
       case VehicleStatus.unknown:
         bg = AppColors.surfaceMuted;
         fg = AppColors.textSecondary;
-        message = 'Status unavailable right now.';
+        message = l.vehicleStatusUnavailable;
         break;
     }
     return Container(
@@ -279,7 +285,7 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Status', style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 12)),
+                Text(l.vehicleStatusStatusLabel, style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 12)),
                 Text(v.status.label, style: TextStyle(color: fg, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Text(message, style: TextStyle(color: fg, fontSize: 12.5)),

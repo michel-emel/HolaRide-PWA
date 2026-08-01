@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
+import '../../utils/date_labels.dart';
 import '../../models/review.dart';
 import '../../models/trip.dart';
 import '../../services/driver_service.dart';
@@ -139,11 +141,8 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
   }
 
   String _dateTimeLabel(DateTime t) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
     final time = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-    return '${t.day} ${months[t.month - 1]} ${t.year} · $time';
+    return '${t.day} ${monthAbbrev(context, t.month)} ${t.year} · $time';
   }
 
   Color _statusColor(String status) {
@@ -162,17 +161,18 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: buildAppHeader(
-          'My Trips',
-          bottom: const TabBar(
+          l.bookingsTitle,
+          bottom: TabBar(
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
-            tabs: [Tab(text: 'Upcoming'), Tab(text: 'Past')],
+            tabs: [Tab(text: l.driverMyTripsUpcoming), Tab(text: l.driverMyTripsPast)],
           ),
         ),
         body: TabBarView(
@@ -205,24 +205,24 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                     ),
                   ],
                 ),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_circle_outline, color: Colors.white, size: 22),
-                      SizedBox(width: 10),
+                      const Icon(Icons.add_circle_outline, color: Colors.white, size: 22),
+                      const SizedBox(width: 10),
                       Text(
-                        'Create a New Trip',
-                        style: TextStyle(
+                        l.driverMyTripsCreate,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: 15.5,
                           letterSpacing: 0.2,
                         ),
                       ),
-                      SizedBox(width: 10),
-                      Icon(Icons.arrow_forward, color: Colors.white70, size: 18),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.arrow_forward, color: Colors.white70, size: 18),
                     ],
                   ),
                 ),
@@ -253,9 +253,9 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
       return RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          children: const [
-            SizedBox(height: 80),
-            Center(child: Text('No trips here yet.', style: TextStyle(color: AppColors.textSecondary))),
+          children: [
+            const SizedBox(height: 80),
+            Center(child: Text(AppLocalizations.of(context).driverMyTripsEmpty, style: const TextStyle(color: AppColors.textSecondary))),
           ],
         ),
       );
@@ -367,8 +367,8 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                             Expanded(
                               child: Text(
                                 pending.length == 1
-                                    ? 'Rate ${pending.first.name}'
-                                    : 'Rate ${pending.length} passengers',
+                                    ? AppLocalizations.of(context).driverRateOne(pending.first.name)
+                                    : AppLocalizations.of(context).driverRatePassengers(pending.length),
                                 style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13),
                               ),
                             ),

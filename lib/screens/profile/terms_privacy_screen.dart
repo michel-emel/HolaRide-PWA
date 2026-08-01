@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_colors.dart';
 
 /// Placeholder only. I'm not drafting real Terms of Service or a
@@ -13,9 +14,10 @@ class TermsPrivacyScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Terms & Privacy Policy')),
+      appBar: AppBar(title: Text(l.termsTitle)),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -27,23 +29,15 @@ class TermsPrivacyScreen extends StatelessWidget {
                 color: AppColors.warningBg,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Text(
-                'This screen is a placeholder. Real Terms of Service and a Privacy '
-                'Policy — ideally reviewed by a lawyer familiar with Cameroonian '
-                'consumer and data protection law, given this app handles real '
-                'payments and personal data — need to replace this text before '
-                'launch.',
-                style: TextStyle(color: AppColors.warning, fontSize: 13, height: 1.5),
+              child: Text(
+                l.termsBody,
+                style: const TextStyle(color: AppColors.warning, fontSize: 13, height: 1.5),
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
-              'At minimum, your real policy should cover things like: what data '
-              'HolaRide collects (phone number, location, payment details), how '
-              'Mobile Money transactions are handled, the cancellation fee '
-              'structure, driver vetting and liability, and how a person can '
-              'request their data be deleted.',
-              style: TextStyle(color: AppColors.textSecondary, height: 1.5, fontSize: 13.5),
+            Text(
+              l.termsNote,
+              style: const TextStyle(color: AppColors.textSecondary, height: 1.5, fontSize: 13.5),
             ),
           ],
         ),

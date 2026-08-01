@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/booking.dart';
 import '../../models/trip.dart';
 import '../../services/api_client.dart';
 import '../../services/driver_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/date_labels.dart';
 import '../trip/chat_screen.dart';
 import '../trip/live_trip_screen.dart';
 import '../trip/rate_trip_screen.dart';
@@ -59,7 +61,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
       print('Error in lib/screens/driver/trip_management_screen.dart: $e');
       if (!mounted) return;
       setState(() {
-        _error = "Couldn't load requests for this trip.";
+        _error = AppLocalizations.of(context).tripMgmtLoadError;
         _loading = false;
       });
     }
@@ -71,6 +73,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
       _bookings.where((b) => b.status == BookingStatus.paid || b.status == BookingStatus.completed).toList();
 
   Future<void> _accept(Booking b) async {
+    final l = AppLocalizations.of(context);
     setState(() => _actingOn.add(b.id));
     try {
       await DriverService.instance.acceptBooking(b.id);
@@ -80,13 +83,14 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/driver/trip_management_screen.dart: $e');
-      _showError('Could not accept this request.');
+      _showError(l.tripMgmtAcceptError);
     } finally {
       if (mounted) setState(() => _actingOn.remove(b.id));
     }
   }
 
   Future<void> _reject(Booking b) async {
+    final l = AppLocalizations.of(context);
     setState(() => _actingOn.add(b.id));
     try {
       await DriverService.instance.rejectBooking(b.id);
@@ -96,7 +100,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/driver/trip_management_screen.dart: $e');
-      _showError('Could not reject this request.');
+      _showError(l.tripMgmtRejectError);
     } finally {
       if (mounted) setState(() => _actingOn.remove(b.id));
     }
@@ -108,19 +112,17 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
 
   // ── Start trip (published → ongoing, enables location sharing) ──
   Future<void> _startTrip() async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Start this trip?'),
-        content: const Text(
-          'The trip will be marked as ongoing. Your paid passengers will be '
-          'able to follow your live position until you mark it completed.',
-        ),
+        title: Text(l.tripMgmtStartTitle),
+        content: Text(l.tripMgmtStartBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Not yet', style: TextStyle(color: AppColors.textSecondary)),
+            child: Text(l.tripMgmtNotYet, style: const TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -128,8 +130,8 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
               backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Start Trip',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            child: Text(l.tripMgmtStartBtn,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -142,14 +144,14 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
       if (!mounted) return;
       setState(() => _tripStarted = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Trip started — passengers can now follow you.')),
+        SnackBar(content: Text(l.tripMgmtStartedMsg)),
       );
     } on ApiException catch (e) {
       _showError(e.message);
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/driver/trip_management_screen.dart: $e');
-      _showError('Could not start the trip. Try again.');
+      _showError(l.tripMgmtStartError);
     } finally {
       if (mounted) setState(() => _starting = false);
     }
@@ -163,16 +165,17 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
     bool popAfterSuccess = false,
     VoidCallback? onSuccess,
   }) async {
+    final l = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l.cancel)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Confirm', style: TextStyle(color: AppColors.danger)),
+            child: Text(l.confirm, style: const TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -189,7 +192,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
         // sitting under "Past" instead of leaving the driver stuck
         // looking at a dead-end screen with no obvious next step.
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage ?? 'Done.')),
+          SnackBar(content: Text(successMessage ?? l.tripMgmtDoneFallback)),
         );
         if (onSuccess != null) {
           onSuccess();
@@ -204,28 +207,31 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/driver/trip_management_screen.dart: $e');
-      _showError('Something went wrong. Try again.');
+      _showError(l.tripMgmtGenericError);
     }
   }
 
   Future<void> _cancelTrip() => _confirmAndRun(
-        'Cancel this trip?',
-        'Every passenger who already paid will be notified and refunded per your cancellation policy.',
+        AppLocalizations.of(context).tripMgmtCancelTitle,
+        AppLocalizations.of(context).tripMgmtCancelBody,
         () => DriverService.instance.cancelTrip(widget.trip.id),
-        successMessage: 'Trip cancelled.',
+        successMessage: AppLocalizations.of(context).tripMgmtCancelled,
         popAfterSuccess: true,
       );
 
   Future<void> _markCompleted() => _confirmAndRun(
-        'Mark trip as completed?',
-        'This closes the trip out once everyone has arrived.',
+        AppLocalizations.of(context).tripMgmtCompleteTitle,
+        AppLocalizations.of(context).tripMgmtCompleteBody,
         () => DriverService.instance.markTripCompleted(widget.trip.id),
-        successMessage: 'Trip marked as completed!',
+        successMessage: AppLocalizations.of(context).tripMgmtCompleted,
         popAfterSuccess: true,
         onSuccess: () {
           final targets = _confirmed
               .where((b) => b.passengerId != null && b.passengerId!.isNotEmpty)
-              .map((b) => RateTarget(id: b.passengerId!, name: b.passengerName ?? 'Passenger', role: 'passenger'))
+              .map((b) => RateTarget(
+                  id: b.passengerId!,
+                  name: b.passengerName ?? AppLocalizations.of(context).chatInboxPassenger,
+                  role: 'passenger'))
               .toList();
           if (targets.isEmpty) {
             // No identifiable passengers to rate (shouldn't normally
@@ -241,8 +247,9 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
       );
 
   Future<void> _pickNoShow() async {
+    final l = AppLocalizations.of(context);
     if (_confirmed.isEmpty) {
-      _showError('No confirmed passengers on this trip yet.');
+      _showError(l.tripMgmtNoPassengers);
       return;
     }
     final chosen = await showModalBottomSheet<Booking>(
@@ -251,15 +258,15 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Who didn\'t show up?', style: TextStyle(fontWeight: FontWeight.w700)),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(l.tripMgmtNoShowTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
             ..._confirmed.map(
               (b) => ListTile(
                 leading: const Icon(Icons.person_outline),
-                title: Text(b.passengerName ?? 'Passenger'),
-                subtitle: Text('${b.seats} seat${b.seats > 1 ? 's' : ''}'),
+                title: Text(b.passengerName ?? l.chatInboxPassenger),
+                subtitle: Text(b.seats > 1 ? l.bookingsSeatPlural(b.seats) : l.bookingsSeatSingular(b.seats)),
                 onTap: () => Navigator.of(context).pop(b),
               ),
             ),
@@ -269,14 +276,15 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
     );
     if (chosen == null) return;
     await _confirmAndRun(
-      'Mark ${chosen.passengerName ?? 'this passenger'} as no-show?',
-      'This affects their record and may apply a fee per your policy.',
+      l.tripMgmtNoShowBody(chosen.passengerName ?? l.tripMgmtNoShowFallbackName),
+      l.tripMgmtNoShowDetail,
       () => DriverService.instance.markNoShow(chosen.id),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final trip = widget.trip;
     return DefaultTabController(
       length: 3,
@@ -309,9 +317,9 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
             tabs: [
-              Tab(text: 'Requests (${_requests.length})'),
-              Tab(text: 'Bookings (${_confirmed.length})'),
-              const Tab(text: 'Trip actions'),
+              Tab(text: l.tripMgmtRequests(_requests.length)),
+              Tab(text: l.tripMgmtBookings(_confirmed.length)),
+              Tab(text: l.tripMgmtActions),
             ],
           ),
         ),
@@ -327,8 +335,9 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
   }
 
   Widget _buildRequests() {
+    final l = AppLocalizations.of(context);
     if (_requests.isEmpty) {
-      return const Center(child: Text('No new requests.', style: TextStyle(color: AppColors.textSecondary)));
+      return Center(child: Text(l.tripMgmtNoRequests, style: const TextStyle(color: AppColors.textSecondary)));
     }
     return RefreshIndicator(
       onRefresh: _load,
@@ -361,9 +370,9 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(b.passengerName ?? 'Passenger',
+                      Text(b.passengerName ?? l.chatInboxPassenger,
                           style: const TextStyle(fontWeight: FontWeight.w700)),
-                      Text('${b.seats} seat${b.seats > 1 ? 's' : ''}',
+                      Text(b.seats > 1 ? l.bookingsSeatPlural(b.seats) : l.bookingsSeatSingular(b.seats),
                           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
                       if ((b.passengerRatingCount) > 0)
                         Padding(
@@ -392,12 +401,12 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
                       IconButton(
                         onPressed: () => _accept(b),
                         icon: const Icon(Icons.check_circle, color: AppColors.success),
-                        tooltip: 'Accept',
+                        tooltip: l.tripMgmtAcceptTooltip,
                       ),
                       IconButton(
                         onPressed: () => _reject(b),
                         icon: const Icon(Icons.cancel, color: AppColors.danger),
-                        tooltip: 'Reject',
+                        tooltip: l.tripMgmtRejectTooltip,
                       ),
                     ],
                   ),
@@ -410,6 +419,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
   }
 
   Widget _buildConfirmed() {
+    final l = AppLocalizations.of(context);
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.separated(
@@ -419,10 +429,10 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
         itemBuilder: (context, i) {
 
           if (_confirmed.isEmpty) {
-            return const Padding(
-              padding: EdgeInsets.only(top: 20),
+            return Padding(
+              padding: const EdgeInsets.only(top: 20),
               child: Center(
-                child: Text('No confirmed passengers yet.', style: TextStyle(color: AppColors.textSecondary)),
+                child: Text(l.tripMgmtNoPassengers, style: const TextStyle(color: AppColors.textSecondary)),
               ),
             );
           }
@@ -449,9 +459,9 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(b.passengerName ?? 'Passenger',
+                      Text(b.passengerName ?? l.chatInboxPassenger,
                           style: const TextStyle(fontWeight: FontWeight.w700)),
-                      Text('${b.seats} seat${b.seats > 1 ? 's' : ''}',
+                      Text(b.seats > 1 ? l.bookingsSeatPlural(b.seats) : l.bookingsSeatSingular(b.seats),
                           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
                       if ((b.passengerRatingCount) > 0)
                         Padding(
@@ -501,8 +511,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   String _dateLabel(DateTime t) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${t.day} ${months[t.month - 1]} ${t.year}';
+    return '${t.day} ${monthAbbrev(context, t.month)} ${t.year}';
   }
 
   String _money(num v) {
@@ -516,6 +525,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
   }
 
   Widget _buildActions() {
+    final l = AppLocalizations.of(context);
     final trip = widget.trip;
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -538,7 +548,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Acting on this trip', style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                Text(l.tripMgmtActingOn, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
                 const SizedBox(height: 4),
                 Text('${trip.originCity} → ${trip.destinationCity}',
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
@@ -568,7 +578,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
                 Text('${_dateLabel(trip.departureTime)} · ${_timeLabel(trip.departureTime)}',
                     style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
                 const SizedBox(height: 4),
-                Text('${trip.seatsAvailable} seats available · ${_money(trip.pricePerSeat)} per seat',
+                Text('${trip.seatsAvailable} ${l.tripDetailSeatsAvailable} · ${_money(trip.pricePerSeat)} ${l.homePerSeat}',
                     style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
               ],
             ),
@@ -587,7 +597,7 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
                         width: 18, height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.play_arrow_rounded, size: 22),
-                label: Text(_starting ? 'Starting...' : 'Start Trip'),
+                label: Text(_starting ? l.tripMgmtStarting : l.tripMgmtStartBtn),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -611,17 +621,17 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.success.withOpacity(.3)),
                 ),
-                child: const Row(children: [
-                  Icon(Icons.gps_fixed, size: 18, color: AppColors.success),
-                  SizedBox(width: 10),
+                child: Row(children: [
+                  const Icon(Icons.gps_fixed, size: 18, color: AppColors.success),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Text('Trip in progress — tap to open the live map.',
-                        style: TextStyle(
+                    child: Text(l.tripMgmtInProgressBanner,
+                        style: const TextStyle(
                             color: AppColors.success, fontWeight: FontWeight.w700, fontSize: 13.5)),
                   ),
-                  Icon(Icons.map_outlined, size: 18, color: AppColors.success),
-                  SizedBox(width: 4),
-                  Icon(Icons.chevron_right, size: 18, color: AppColors.success),
+                  const Icon(Icons.map_outlined, size: 18, color: AppColors.success),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, size: 18, color: AppColors.success),
                 ]),
               ),
             ),
@@ -630,21 +640,21 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
           OutlinedButton.icon(
             onPressed: _markCompleted,
             icon: const Icon(Icons.check_circle_outline, color: AppColors.success),
-            label: const Text('Mark Completed'),
+            label: Text(l.tripMgmtMarkComplete),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.success),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _pickNoShow,
             icon: const Icon(Icons.person_off_outlined, color: AppColors.warning),
-            label: const Text('Mark No-show'),
+            label: Text(l.tripMgmtMarkNoShow),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.warning),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _cancelTrip,
             icon: const Icon(Icons.cancel_outlined, color: AppColors.danger),
-            label: const Text('Cancel Trip'),
+            label: Text(l.tripMgmtCancelBtn),
             style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
           ),
         ],

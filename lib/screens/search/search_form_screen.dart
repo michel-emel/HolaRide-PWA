@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../../models/location.dart';
 import '../../services/location_service.dart';
 import '../../theme/app_colors.dart';
+import '../../l10n/app_localizations.dart';
+import '../../utils/date_labels.dart';
 import 'search_results_screen.dart';
 
 /// Screen 7 — "Find your ride" search screen.
@@ -169,22 +171,24 @@ class _SearchFormScreenState extends State<SearchFormScreen>
   }
 
   String get _dateLabel {
-    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final l = AppLocalizations.of(context);
+    final m = monthAbbrev(context, _date.month);
     final now = DateTime.now();
-    if (_date.day == now.day && _date.month == now.month && _date.year == now.year) return 'Today, ${_date.day} ${m[_date.month-1]}';
+    if (_date.day == now.day && _date.month == now.month && _date.year == now.year) return l.searchToday(_date.day, m);
     final tom = now.add(const Duration(days: 1));
-    if (_date.day == tom.day && _date.month == tom.month && _date.year == tom.year) return 'Tomorrow, ${_date.day} ${m[_date.month-1]}';
+    if (_date.day == tom.day && _date.month == tom.month && _date.year == tom.year) return l.searchTomorrow(_date.day, m);
     const wd = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    return '${wd[_date.weekday-1]} ${_date.day} ${m[_date.month-1]} ${_date.year}';
+    return '${wd[_date.weekday-1]} ${_date.day} $m ${_date.year}';
   }
 
   void _search() {
+    final l = AppLocalizations.of(context);
     if (_from == null || _to == null) {
-      setState(() => _error = 'Please select both departure and destination.');
+      setState(() => _error = l.searchErrorRoute);
       return;
     }
     if (_from!.cityName.trim().toLowerCase() == _to!.cityName.trim().toLowerCase()) {
-      setState(() => _error = 'Departure and destination must be different cities.');
+      setState(() => _error = l.searchErrorSameCity);
       return;
     }
     setState(() => _error = null);
@@ -197,6 +201,7 @@ class _SearchFormScreenState extends State<SearchFormScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -280,18 +285,18 @@ class _SearchFormScreenState extends State<SearchFormScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           RichText(
-                            text: const TextSpan(
-                              style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, height: 1.05),
+                            text: TextSpan(
+                              style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800, height: 1.05),
                               children: [
-                                TextSpan(text: 'Find ', style: TextStyle(color: AppColors.textPrimary)),
-                                TextSpan(text: 'your ride', style: TextStyle(color: AppColors.primary)),
+                                TextSpan(text: l.searchHeroTitlePrefix, style: const TextStyle(color: AppColors.textPrimary)),
+                                TextSpan(text: l.searchHeroTitleAccent, style: const TextStyle(color: AppColors.primary)),
                               ],
                             ),
                           ),
                           const SizedBox(height: 10),
-                          const Text(
-                            'Find comfortable rides\nbetween cities.',
-                            style: TextStyle(fontSize: 14.5, color: AppColors.textSecondary, height: 1.35),
+                          Text(
+                            l.searchHeroSubtitle,
+                            style: const TextStyle(fontSize: 14.5, color: AppColors.textSecondary, height: 1.35),
                           ),
                         ],
                       ),
@@ -347,8 +352,8 @@ class _SearchFormScreenState extends State<SearchFormScreen>
                           child: Column(
                             children: [
                               _BoxedField(
-                                label: 'Leaving from',
-                                hint: 'City or pickup point',
+                                label: l.searchFrom,
+                                hint: l.searchCityFrom,
                                 controller: _fromCtrl,
                                 focusNode: _fromFocus,
                                 loading: _fromLoading,
@@ -361,8 +366,8 @@ class _SearchFormScreenState extends State<SearchFormScreen>
                               ),
                               const SizedBox(height: 26),
                               _BoxedField(
-                                label: 'Going to',
-                                hint: 'City or drop-off point',
+                                label: l.searchTo,
+                                hint: l.searchCityTo,
                                 controller: _toCtrl,
                                 focusNode: _toFocus,
                                 loading: _toLoading,
@@ -440,8 +445,8 @@ class _SearchFormScreenState extends State<SearchFormScreen>
                   ),
                   const SizedBox(width: 14),
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Departure date',
-                        style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                    Text(l.searchDate,
+                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text(_dateLabel, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textPrimary)),
                   ]),
@@ -452,10 +457,10 @@ class _SearchFormScreenState extends State<SearchFormScreen>
                       color: AppColors.infoBg,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text('Change', style: TextStyle(fontSize: 12.5, color: AppColors.primary, fontWeight: FontWeight.w700)),
-                      SizedBox(width: 2),
-                      Icon(Icons.chevron_right, size: 16, color: AppColors.primary),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text(l.searchChange, style: const TextStyle(fontSize: 12.5, color: AppColors.primary, fontWeight: FontWeight.w700)),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.chevron_right, size: 16, color: AppColors.primary),
                     ]),
                   ),
                 ]),
@@ -496,14 +501,14 @@ class _SearchFormScreenState extends State<SearchFormScreen>
                 child: InkWell(
                   onTap: _search,
                   borderRadius: BorderRadius.circular(18),
-                  child: const Center(
+                  child: Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Find Available Rides',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-                        SizedBox(width: 10),
-                        Icon(Icons.search, color: Colors.white, size: 22),
+                        Text(l.searchButton,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                        const SizedBox(width: 10),
+                        const Icon(Icons.search, color: Colors.white, size: 22),
                       ],
                     ),
                   ),
@@ -514,17 +519,17 @@ class _SearchFormScreenState extends State<SearchFormScreen>
             const SizedBox(height: 26),
 
             // ── Quick Routes ────────────────────────────────────
-            const Row(children: [
-              Icon(Icons.bolt, color: AppColors.primary, size: 20),
-              SizedBox(width: 6),
-              Text('Quick Routes',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
+            Row(children: [
+              const Icon(Icons.bolt, color: AppColors.primary, size: 20),
+              const SizedBox(width: 6),
+              Text(l.searchQuickRoutesTitle,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
             ]),
             const SizedBox(height: 4),
-            const Padding(
-              padding: EdgeInsets.only(left: 26),
-              child: Text('Tap a route to fill your search instantly.',
-                  style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+            Padding(
+              padding: const EdgeInsets.only(left: 26),
+              child: Text(l.searchQuickRoutesHint,
+                  style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -555,22 +560,22 @@ class _SearchFormScreenState extends State<SearchFormScreen>
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(.04), blurRadius: 12, offset: const Offset(0, 4))],
               ),
               child: Row(children: [
-                const Expanded(child: _TrustItem(
+                Expanded(child: _TrustItem(
                   icon: Icons.verified_user_outlined,
-                  title: 'Secure payments',
-                  subtitle: 'Your data is protected',
+                  title: l.searchTrustPaymentsTitle,
+                  subtitle: l.searchTrustPaymentsSubtitle,
                 )),
                 Container(width: 1, height: 44, color: AppColors.border.withOpacity(.6)),
-                const Expanded(child: _TrustItem(
+                Expanded(child: _TrustItem(
                   icon: Icons.groups_outlined,
-                  title: 'Trusted community',
-                  subtitle: 'Verified drivers',
+                  title: l.searchTrustCommunityTitle,
+                  subtitle: l.searchTrustCommunitySubtitle,
                 )),
                 Container(width: 1, height: 44, color: AppColors.border.withOpacity(.6)),
-                const Expanded(child: _TrustItem(
+                Expanded(child: _TrustItem(
                   icon: Icons.headset_mic_outlined,
-                  title: '24/7 Support',
-                  subtitle: "We're here for you",
+                  title: l.searchTrustSupportTitle,
+                  subtitle: l.searchTrustSupportSubtitle,
                 )),
               ]),
             ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/booking.dart';
 import '../../models/trip.dart';
 import '../../services/api_client.dart';
 import '../../services/booking_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/date_labels.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/profile_icon_button.dart';
 
@@ -33,10 +35,7 @@ class _CancelWithdrawScreenState extends State<CancelWithdrawScreen> {
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   String _dateLabel(DateTime t) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${t.day} ${months[t.month - 1]} ${t.year}';
+    return '${t.day} ${monthAbbrev(context, t.month)} ${t.year}';
   }
 
   Future<void> _confirm() async {
@@ -53,7 +52,7 @@ class _CancelWithdrawScreenState extends State<CancelWithdrawScreen> {
     } catch (e) {
       // ignore: avoid_print
       print('Error in lib/screens/bookings/cancel_withdraw_screen.dart: $e');
-      setState(() => _error = 'Could not complete this right now. Try again.');
+      setState(() => _error = AppLocalizations.of(context).cancelError);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -61,6 +60,7 @@ class _CancelWithdrawScreenState extends State<CancelWithdrawScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final trip = widget.trip;
     final booking = widget.booking;
     return Scaffold(
@@ -85,14 +85,12 @@ class _CancelWithdrawScreenState extends State<CancelWithdrawScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              _isPaid ? 'Cancel this trip?' : 'Cancel this request?',
+              _isPaid ? l.cancelTripTitle : l.withdrawTitle,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 10),
             Text(
-              _isPaid
-                  ? 'Are you sure you want to cancel this trip? Depending on how close it is to departure, a cancellation fee may apply. This action cannot be undone.'
-                  : 'Are you sure you want to withdraw this request? This action cannot be undone.',
+              _isPaid ? l.cancelTripBody : l.withdrawBody,
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
             ),
@@ -136,7 +134,10 @@ class _CancelWithdrawScreenState extends State<CancelWithdrawScreen> {
                     Text('${_dateLabel(trip.departureTime)} · ${_timeLabel(trip.departureTime)}',
                         style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
                     const SizedBox(height: 4),
-                    Text('${booking.seats} seat${booking.seats > 1 ? 's' : ''}',
+                    Text(
+                        booking.seats > 1
+                            ? l.bookingsSeatPlural(booking.seats)
+                            : l.bookingsSeatSingular(booking.seats),
                         style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                   ],
                 ),
@@ -147,7 +148,7 @@ class _CancelWithdrawScreenState extends State<CancelWithdrawScreen> {
             ],
             const SizedBox(height: 26),
             PrimaryButton(
-              label: _isPaid ? 'Cancel Trip' : 'Withdraw Request',
+              label: _isPaid ? l.cancelTripBtn : l.withdrawBtn,
               backgroundColor: AppColors.danger,
               onPressed: _confirm,
               loading: _submitting,
@@ -155,7 +156,7 @@ class _CancelWithdrawScreenState extends State<CancelWithdrawScreen> {
             const SizedBox(height: 10),
             TextButton(
               onPressed: _submitting ? null : () => Navigator.of(context).pop(false),
-              child: Text(_isPaid ? 'Keep Trip' : 'Keep Request'),
+              child: Text(_isPaid ? l.keepTripBtn : l.keepRequestBtn),
             ),
           ],
         ),

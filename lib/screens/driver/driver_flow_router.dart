@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/vehicle.dart';
 import '../../services/auth_gate.dart';
 import '../../services/vehicle_service.dart';
@@ -15,7 +16,8 @@ import 'vehicle_status_screen.dart';
 /// tapping "Publish a Trip" gets sent to log in or sign up first, and
 /// only continues into the actual driver flow once that succeeds.
 Future<void> openDriverFlow(BuildContext context) async {
-  final loggedIn = await requireLogin(context, reason: 'Log in to publish a trip as a driver.');
+  final reason = AppLocalizations.of(context).driverFlowLoginReason;
+  final loggedIn = await requireLogin(context, reason: reason);
   if (!loggedIn || !context.mounted) return;
 
   showDialog(

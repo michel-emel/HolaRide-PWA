@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/review_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
@@ -40,10 +41,11 @@ class _RateTripScreenState extends State<RateTripScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Rate this trip'),
+        title: Text(l.rateTripTitle),
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -55,14 +57,14 @@ class _RateTripScreenState extends State<RateTripScreen> {
               children: [
                 Text(
                   widget.targets.length > 1
-                      ? 'How was each passenger on this trip?'
-                      : 'How was your trip?',
+                      ? l.rateTripPassengerQuestion
+                      : l.rateTripDriverQuestion,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Your rating helps keep HolaRide trustworthy for everyone.',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                Text(
+                  l.rateTripNote,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                 ),
                 const SizedBox(height: 20),
                 for (final target in widget.targets) ...[
@@ -129,7 +131,7 @@ class _RatingCardState extends State<_RatingCard> {
 
   Future<void> _submit() async {
     if (_stars == 0) {
-      setState(() => _error = 'Tap a star rating first.');
+      setState(() => _error = AppLocalizations.of(context).rateTripStarError);
       return;
     }
     setState(() {
@@ -150,7 +152,7 @@ class _RatingCardState extends State<_RatingCard> {
       // ignore: avoid_print
       print('Error in lib/screens/trip/rate_trip_screen.dart: $e');
       if (!mounted) return;
-      setState(() => _error = 'Could not submit this rating. Try again.');
+      setState(() => _error = AppLocalizations.of(context).rateTripSubmitError);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -164,7 +166,8 @@ class _RatingCardState extends State<_RatingCard> {
 
   @override
   Widget build(BuildContext context) {
-    final label = widget.target.role == 'driver' ? 'Your driver' : widget.target.name;
+    final l = AppLocalizations.of(context);
+    final label = widget.target.role == 'driver' ? l.rateTripYourDriver : widget.target.name;
 
     return Container(
       width: double.infinity,
@@ -194,8 +197,8 @@ class _RatingCardState extends State<_RatingCard> {
                     Expanded(
                       child: Text(
                         widget.target.role == 'driver'
-                            ? 'Thanks — you\'ve rated your driver.'
-                            : 'Thanks — you\'ve rated $label.',
+                            ? l.rateTripThanksDriver
+                            : l.rateTripThanksPassenger(label),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -267,8 +270,8 @@ class _RatingCardState extends State<_RatingCard> {
                       maxLines: 2,
                       decoration: InputDecoration(
                         hintText: widget.target.role == 'driver'
-                            ? 'Anything about the ride? (optional)'
-                            : 'Anything about this passenger? (optional)',
+                            ? l.rateTripDriverComment
+                            : l.rateTripPassengerComment,
                         filled: true,
                         fillColor: AppColors.infoBg,
                       ),
@@ -285,7 +288,7 @@ class _RatingCardState extends State<_RatingCard> {
                         child: _submitting
                             ? const SizedBox(
                                 width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Text('Submit rating'),
+                            : Text(l.rateTripSubmit),
                       ),
                     ),
                   ],

@@ -8,6 +8,7 @@ import '../../services/booking_service.dart';
 import '../../services/review_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/date_labels.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/profile_icon_button.dart';
@@ -650,19 +651,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   String _timeLabel(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-  static const _monthsEn = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-  ];
-  static const _monthsFr = [
-    'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
-    'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'
-  ];
-
   String _dateLabel(DateTime t) {
-    final months = Localizations.localeOf(context).languageCode == 'fr'
-        ? _monthsFr
-        : _monthsEn;
-    return '${t.day} ${months[t.month - 1]}';
+    return '${t.day} ${monthAbbrev(context, t.month)}';
   }
 }

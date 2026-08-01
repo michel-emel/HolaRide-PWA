@@ -1233,4 +1233,607 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get welcomeSubtitle =>
       'Comfortable, affordable and safe\nrides across Cameroon.';
+
+  @override
+  String get liveTripConsentTitle => 'Share your position';
+
+  @override
+  String get liveTripConsentBody =>
+      'During this trip, the driver will be able to see your live position. You can turn sharing off anytime from the tracking screen.';
+
+  @override
+  String get liveTripConsentDecline => 'Follow without sharing';
+
+  @override
+  String get liveTripConsentAccept => 'Share';
+
+  @override
+  String get liveTripEndedTitle => 'Trip completed';
+
+  @override
+  String get liveTripEndedBody => 'Location sharing was stopped automatically.';
+
+  @override
+  String get liveTripBack => 'Back';
+
+  @override
+  String get liveTripSharingSubtitle => 'Sharing your live position';
+
+  @override
+  String get liveTripFollowingSubtitle => 'Following your driver';
+
+  @override
+  String get liveTripMeMarker => 'You';
+
+  @override
+  String get liveTripLive => 'Live';
+
+  @override
+  String liveTripUpdatedAgo(int secs) {
+    return 'Updated ${secs}s ago';
+  }
+
+  @override
+  String liveTripLastSeenAgo(int mins) {
+    return 'Last seen ${mins}m ago';
+  }
+
+  @override
+  String get liveTripWaitingSignal => 'Waiting for signal...';
+
+  @override
+  String get liveTripDriverSeesPosition => 'The driver can see your position';
+
+  @override
+  String get liveTripSharingOff => 'Sharing off';
+
+  @override
+  String get liveTripSharingYourPosition => 'You\'re sharing your position';
+
+  @override
+  String get liveTripNoPassengerYet => 'No passenger position received yet.';
+
+  @override
+  String liveTripPassengerVisible(int count) {
+    return '$count passenger visible on the map.';
+  }
+
+  @override
+  String liveTripPassengersVisible(int count) {
+    return '$count passengers visible on the map.';
+  }
+
+  @override
+  String liveTripRouteLabel(String km, String mins) {
+    return '$km km · $mins min';
+  }
+
+  @override
+  String get liveTripPermServiceDisabled =>
+      'Location services are disabled on this device.';
+
+  @override
+  String get liveTripPermDenied => 'Location permission was denied.';
+
+  @override
+  String get liveTripPermDeniedForever =>
+      'Location permission is permanently denied — enable it in your phone settings.';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingLetsGo => 'Let\'s Go!';
+
+  @override
+  String get onboardingBrandName => 'HolaRide';
+
+  @override
+  String get onboardingTagline => 'Share the ride. Go further.';
+
+  @override
+  String get onboardingPage1TitleLine1 => 'Intercity travel,\n';
+
+  @override
+  String get onboardingPage1TitleAccent => 'smarter ';
+
+  @override
+  String get onboardingPage1TitleSuffix => 'together';
+
+  @override
+  String get onboardingPage1Body =>
+      'Book a seat or offer a ride to your\nfavorite cities in Cameroon.\nSafe, affordable and reliable.';
+
+  @override
+  String get onboardingPage2TitlePrefix => 'Find the right ride\nfor ';
+
+  @override
+  String get onboardingPage2TitleAccent => 'your journey';
+
+  @override
+  String get onboardingPage2Body =>
+      'Search trips between cities, compare options,\ncheck driver profiles and book your seat\nin just a few taps.';
+
+  @override
+  String get onboardingPage3TitlePrefix => 'Travel with ';
+
+  @override
+  String get onboardingPage3TitleAccent => 'peace\n';
+
+  @override
+  String get onboardingPage3TitleSuffix => 'of mind';
+
+  @override
+  String get onboardingPage3Body =>
+      'Live trip tracking, secure payments and\n24/7 support — we\'ve got you covered\nevery step of the way.';
+
+  @override
+  String get onboardingFeatSafeTitle => 'Safe & Trusted';
+
+  @override
+  String get onboardingFeatSafeSub => 'Verified drivers\n& secure payments';
+
+  @override
+  String get onboardingFeatShareTitle => 'Find or Share';
+
+  @override
+  String get onboardingFeatShareSub => 'Choose your trip\nor offer seats';
+
+  @override
+  String get onboardingFeatAffordableTitle => 'Affordable';
+
+  @override
+  String get onboardingFeatAffordableSub => 'Better prices\nfor every journey';
+
+  @override
+  String get onboardingFeatRoutesTitle => 'Many routes';
+
+  @override
+  String get onboardingFeatRoutesSub => 'Across Cameroon';
+
+  @override
+  String get onboardingFeatPricesTitle => 'Great prices';
+
+  @override
+  String get onboardingFeatPricesSub => 'No hidden fees';
+
+  @override
+  String get onboardingFeatBookingTitle => 'Quick booking';
+
+  @override
+  String get onboardingFeatBookingSub => 'In a few taps';
+
+  @override
+  String get onboardingFeatPaymentsTitle => 'Secure Payments';
+
+  @override
+  String get onboardingFeatPaymentsSub => 'Your money is protected';
+
+  @override
+  String get onboardingFeatTrackingTitle => 'Live Trip Tracking';
+
+  @override
+  String get onboardingFeatTrackingSub => 'Follow your trip in real time';
+
+  @override
+  String get onboardingFeatSupportTitle => '24/7 Support';
+
+  @override
+  String get onboardingFeatSupportSub => 'We\'re here to help anytime';
+
+  @override
+  String get onboardingFooterTagline =>
+      'Building a connected Cameroon, one ride at a time.';
+
+  @override
+  String get searchHeroTitlePrefix => 'Find ';
+
+  @override
+  String get searchHeroTitleAccent => 'your ride';
+
+  @override
+  String get searchHeroSubtitle => 'Find comfortable rides\nbetween cities.';
+
+  @override
+  String get searchQuickRoutesTitle => 'Quick Routes';
+
+  @override
+  String get searchQuickRoutesHint =>
+      'Tap a route to fill your search instantly.';
+
+  @override
+  String get searchTrustPaymentsTitle => 'Secure payments';
+
+  @override
+  String get searchTrustPaymentsSubtitle => 'Your data is protected';
+
+  @override
+  String get searchTrustCommunityTitle => 'Trusted community';
+
+  @override
+  String get searchTrustCommunitySubtitle => 'Verified drivers';
+
+  @override
+  String get searchTrustSupportTitle => '24/7 Support';
+
+  @override
+  String get searchTrustSupportSubtitle => 'We\'re here for you';
+
+  @override
+  String get searchResultsPassengerSingular => 'passenger';
+
+  @override
+  String get searchResultsPassengerPlural => 'passengers';
+
+  @override
+  String get homeJoinPopupBody =>
+      'Sign in to book trips and connect with verified drivers.';
+
+  @override
+  String get homeHeroTravelSmarterTitle => 'Travel Smarter,\nSave More';
+
+  @override
+  String get homeHeroTravelSmarterBody =>
+      'Share the cost with fellow travelers going your way.';
+
+  @override
+  String get homeHeroSafeTitle => 'Safe &\nReliable';
+
+  @override
+  String get homeHeroSafeBody =>
+      'All drivers are verified. Your safety is our priority.';
+
+  @override
+  String get homeHeroCameroonTitle => 'Across\nCameroon';
+
+  @override
+  String get homeHeroCameroonBody =>
+      'Yaoundé, Douala, Bafoussam and more destinations.';
+
+  @override
+  String get homeFindRideSubtitle => 'Search for rides to your destination';
+
+  @override
+  String get homeOfferRide => 'Offer a Ride';
+
+  @override
+  String get homeOfferRideSubtitle =>
+      'Post your trip and fill your empty seats';
+
+  @override
+  String get homeRideTogetherTitle => 'Ride together, save more';
+
+  @override
+  String get homeRideTogetherBody =>
+      'Share your ride, split\nthe fare and reduce cost.';
+
+  @override
+  String get homeLearnMore => 'Learn More';
+
+  @override
+  String get homeHappyRiders => 'Happy riders\nusing HolaRide';
+
+  @override
+  String homeTripsAvailableSingular(int count) {
+    return '$count trip available';
+  }
+
+  @override
+  String homeTripsAvailablePlural(int count) {
+    return '$count trips available';
+  }
+
+  @override
+  String get splashTagline => 'Travel together.\nSave more.';
+
+  @override
+  String get splashTagSafe => 'Safe';
+
+  @override
+  String get splashTagAffordable => 'Affordable';
+
+  @override
+  String get splashTagReliable => 'Reliable';
+
+  @override
+  String get splashFooter => 'Connecting cities across Cameroon 🇨🇲';
+
+  @override
+  String get paymentChangeNumberTitle => 'Pay with a different number';
+
+  @override
+  String get paymentChangeNumberBody =>
+      'The Mobile Money prompt will be sent to this number.';
+
+  @override
+  String get paymentChangeNumberHint => '675 123 456';
+
+  @override
+  String get paymentChangeNumberError =>
+      'Enter a valid 9-digit number starting with 6.';
+
+  @override
+  String get paymentUseThisNumber => 'Use this number';
+
+  @override
+  String get paymentUserCancelled => 'You cancelled the payment on your phone.';
+
+  @override
+  String get paymentFailedGeneric => 'Payment failed. Please try again.';
+
+  @override
+  String get paymentProviderUnreachable =>
+      'Could not reach the payment provider. Try again.';
+
+  @override
+  String get paymentCloseBtn => 'Close';
+
+  @override
+  String get payRemainingTitle => 'Pay remaining balance';
+
+  @override
+  String get payRemainingDepositPaid => '20% deposit paid';
+
+  @override
+  String get payRemainingBalanceLabel => 'Remaining balance';
+
+  @override
+  String get payRemainingMomoNumber => 'Mobile Money number';
+
+  @override
+  String get payRemainingAutoDetectNote =>
+      'MTN or Orange Money is detected automatically — you\'ll get a USSD prompt on this number.';
+
+  @override
+  String get payRemainingCheckPhoneNote =>
+      'Check your phone — confirm the Mobile Money prompt to finish.';
+
+  @override
+  String get payRemainingWaitingLabel => 'Waiting for confirmation...';
+
+  @override
+  String get payRemainingDevNote =>
+      'Only visible in debug builds. Bypasses real Mobile Money — works only while PAYMENT_DEV_MODE is on in the backend.';
+
+  @override
+  String get payRemainingSimulateError => 'Could not simulate payment.';
+
+  @override
+  String get payRemainingFailedMsg =>
+      'The payment failed. Check your Mobile Money balance and try again.';
+
+  @override
+  String get payRemainingExpiredMsg =>
+      'The payment request expired before you confirmed it. Try again.';
+
+  @override
+  String get payRemainingStillWaitingMsg =>
+      'Still waiting on confirmation — check your phone, then try again if nothing came through.';
+
+  @override
+  String get payRemainingGenericError =>
+      'Payment could not be completed. Try again.';
+
+  @override
+  String get tripDetailAppBarTitle => 'Trip Details';
+
+  @override
+  String get tripDetailLoadError => 'Couldn\'t load this trip.';
+
+  @override
+  String get tripDetailTotalPriceLabel => 'Total price (1 seat)';
+
+  @override
+  String get tripDetailNoHiddenFees => 'No hidden fees';
+
+  @override
+  String get tripDetailSecureBooking => 'Secure booking';
+
+  @override
+  String get tripDetailVerifiedTrip => 'Verified Trip';
+
+  @override
+  String get tripDetailSafeReliableTrusted => 'Safe • Reliable • Trusted';
+
+  @override
+  String get tripDetailDepartureTag => 'Departure';
+
+  @override
+  String get tripDetailArrivalTag => 'Arrival';
+
+  @override
+  String get tripDetailPromoTitle => 'Affordable, safe and reliable travel';
+
+  @override
+  String get tripDetailPromoBody =>
+      'Book with confidence and enjoy your journey.';
+
+  @override
+  String tripDetailSeatsLeftSingular(int count) {
+    return '$count seat left';
+  }
+
+  @override
+  String tripDetailSeatsLeftPlural(int count) {
+    return '$count seats left';
+  }
+
+  @override
+  String get tripDetailLuggageLabel => 'Luggage';
+
+  @override
+  String get tripDetailLuggageValue => '1 bag per passenger';
+
+  @override
+  String get tripDetailVerifiedDriverBadge => 'Verified driver';
+
+  @override
+  String get tripDetailIdVerified => 'ID Verified';
+
+  @override
+  String get tripDetailPhoneVerified => 'Phone Verified';
+
+  @override
+  String get tripDetailBackgroundChecked => 'Background Checked';
+
+  @override
+  String tripDetailTripsCompleted(int count) {
+    return '$count Trips completed';
+  }
+
+  @override
+  String tripDetailReviewCountBare(int count) {
+    return '$count review';
+  }
+
+  @override
+  String tripDetailReviewCountBarePlural(int count) {
+    return '$count reviews';
+  }
+
+  @override
+  String get tripDetailDriverProfileSoon => 'Driver profile coming soon';
+
+  @override
+  String get tripDetailKnowMoreDriver => 'Know more about the driver';
+
+  @override
+  String get safetyPriorityTitle => 'Your safety is our priority';
+
+  @override
+  String get safetyPriorityBody =>
+      'SOS, live location sharing and in-app chat available.';
+
+  @override
+  String get learnMore => 'Learn more';
+
+  @override
+  String get bookingRequestSafeSecureTrusted => 'Safe · Secure · Trusted';
+
+  @override
+  String get bookingRequestSeatsQuestion => 'How many seats do you need?';
+
+  @override
+  String get bookingRequestSentHeading =>
+      'Your request will be sent to the driver';
+
+  @override
+  String get bookingRequestNotPayingYet => 'You\'re not paying yet';
+
+  @override
+  String get bookingRequestSentBody =>
+      'Your request will be sent to the driver. You\'ll only pay after the driver accepts your request.';
+
+  @override
+  String bookingRequestPayFullSubtitle(String amount) {
+    return 'Pay $amount now.';
+  }
+
+  @override
+  String get bookingRequestPayBalanceTag => 'Pay balance before trip';
+
+  @override
+  String get bookingRequestTotalToPay => 'Total to pay';
+
+  @override
+  String get bookingRequestPaidAfterAccept => '(paid after driver accepts)';
+
+  @override
+  String get cancellationWindowNote =>
+      'You can cancel for free up to 2 hours before departure.';
+
+  @override
+  String get bookingRequestSendButton => 'Send Request to Driver';
+
+  @override
+  String get bookingRequestSendSubtext =>
+      'Driver must accept before booking is confirmed';
+
+  @override
+  String get bookingRequestSendError =>
+      'Could not send your request. Try again.';
+
+  @override
+  String get waitingWhatsNext => 'What happens next?';
+
+  @override
+  String get waitingStepRequestSent => 'Request sent';
+
+  @override
+  String get waitingStepDriverNotified => 'Driver notified';
+
+  @override
+  String get waitingStepDriverResponds => 'Driver responds';
+
+  @override
+  String get waitingNotifyHeading => 'We\'ll notify you immediately';
+
+  @override
+  String get waitingNotifyBody =>
+      'You can continue using the app.\nWe\'ll let you know as soon as the driver accepts.';
+
+  @override
+  String get waitingGoHomeButton => 'Go Home';
+
+  @override
+  String get orDivider => 'or';
+
+  @override
+  String get waitingResponseTimeBanner =>
+      'Most drivers respond within 5–10 minutes.';
+
+  @override
+  String get chatHideChatBody =>
+      'This removes it from your own list only — the other side keeps their conversation as normal. If a new message comes in later, it\'ll reappear in your list.';
+
+  @override
+  String get chatHideChatError => 'Could not delete this chat. Try again.';
+
+  @override
+  String get driverFlowLoginReason => 'Log in to publish a trip as a driver.';
+
+  @override
+  String get payoutRowLabel => 'Payout';
+
+  @override
+  String get tripMgmtStartTitle => 'Start this trip?';
+
+  @override
+  String get tripMgmtStartBody =>
+      'The trip will be marked as ongoing. Your paid passengers will be able to follow your live position until you mark it completed.';
+
+  @override
+  String get tripMgmtNotYet => 'Not yet';
+
+  @override
+  String get tripMgmtStartBtn => 'Start Trip';
+
+  @override
+  String get tripMgmtStarting => 'Starting...';
+
+  @override
+  String get tripMgmtStartedMsg =>
+      'Trip started — passengers can now follow you.';
+
+  @override
+  String get tripMgmtStartError => 'Could not start the trip. Try again.';
+
+  @override
+  String get tripMgmtInProgressBanner =>
+      'Trip in progress — tap to open the live map.';
+
+  @override
+  String get tripMgmtAcceptTooltip => 'Accept';
+
+  @override
+  String get tripMgmtRejectTooltip => 'Reject';
+
+  @override
+  String get tripMgmtNoShowFallbackName => 'this passenger';
+
+  @override
+  String get tripMgmtDoneFallback => 'Done.';
 }

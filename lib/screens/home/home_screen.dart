@@ -10,11 +10,11 @@ import '../../theme/app_colors.dart';
 import '../../widgets/profile_icon_button.dart';
 import '../../widgets/notification_bell.dart';
 import '../../widgets/language_switcher.dart';
+import '../../utils/date_labels.dart';
 import '../search/search_form_screen.dart';
 import '../trip/trip_detail_screen.dart';
 import '../driver/driver_flow_router.dart';
-import '../../services/locale_service.dart';
-import '../../main.dart';
+import '../../l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -160,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // fails; only surface the error banner on the very first load.
       setState(() {
         _loadingTrips = false;
-        if (showLoading) _error = 'Could not load trips.';
+        if (showLoading) _error = AppLocalizations.of(context).homeLoadError;
       });
     }
   }
@@ -169,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     final loggedIn = await SessionService.instance.isLoggedIn();
     if (!mounted || loggedIn) return;
+    final l = AppLocalizations.of(context);
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -180,21 +181,21 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: const BoxDecoration(color: AppColors.infoBg, shape: BoxShape.circle),
             child: const Icon(Icons.eco, color: AppColors.primary, size: 28)),
           const SizedBox(height: 14),
-          const Text('Join HolaRide', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+          Text(l.homeJoinTitle, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
           const SizedBox(height: 6),
-          const Text('Sign in to book trips and connect with verified drivers.',
+          Text(l.homeJoinPopupBody,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4)),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4)),
           const SizedBox(height: 18),
           SizedBox(width: double.infinity, child: FilledButton(
             onPressed: () { Navigator.of(context).pop(); requireLogin(context); },
             style: FilledButton.styleFrom(backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(vertical: 13),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text('Get Started', style: TextStyle(fontWeight: FontWeight.w700)))),
+            child: Text(l.homeGetStarted, style: const TextStyle(fontWeight: FontWeight.w700)))),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Maybe later', style: TextStyle(color: AppColors.textSecondary))),
+            child: Text(l.homeMaybeLater, style: const TextStyle(color: AppColors.textSecondary))),
         ]),
       ),
     );
@@ -205,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final top = MediaQuery.of(context).padding.top;
     final bottom = MediaQuery.of(context).padding.bottom;
     return Scaffold(
@@ -224,27 +226,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             )),
             const Spacer(),
-            // Language pill — shows flag + "English" + chevron
-            ValueListenableBuilder<Locale>(
-              valueListenable: localeNotifier,
-              builder: (_, locale, __) {
-                final isFr = locale.languageCode == 'fr';
-                return GestureDetector(
-                  onTap: () => LocaleService.setLocale(Locale(isFr ? 'en' : 'fr')),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.border)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text(isFr ? '🇫🇷' : '🇬🇧', style: const TextStyle(fontSize: 16)),
-                      const SizedBox(width: 6),
-                      Text(isFr ? 'Français' : 'English',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                    ])));
-              }),
-            const SizedBox(width: 10),
+            // Language pill — shared toggle widget
+            const LanguageToggleButton(),
             if (_loggedIn) ...[
               const NotificationBell(),
               const SizedBox(width: 6),
@@ -276,8 +259,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // ── Available trips ──────────────────────────────────
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text('Available trips',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+                Text(l.homeAvailableTrips,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
                 GestureDetector(
                   onTap: _openSearch,
                   child: Container(
@@ -285,10 +268,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.infoBg,
                       borderRadius: BorderRadius.circular(20)),
-                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text('See all', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12)),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_forward_ios, size: 11, color: AppColors.primary),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text(l.homeSeeAll, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward_ios, size: 11, color: AppColors.primary),
                     ]))),
               ]),
               const SizedBox(height: 12),
@@ -318,6 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Hero banner with page swipe + dots ──────────────────────
   Widget _buildHero() {
+    final l = AppLocalizations.of(context);
     return Column(children: [
       ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -327,14 +311,13 @@ class _HomeScreenState extends State<HomeScreen> {
             controller: _heroCtrl,
             onPageChanged: (i) => setState(() => _heroPage = i),
             children: [
-              _heroSlide('Rides Going\nYour Way',
-                  'HolaRide connects you with verified drivers making the same intercity trip.'),
-              _heroSlide('Travel Smarter,\nSave More',
-                  'Share the cost with fellow travelers going your way.'),
-              _heroSlide('Safe &\nReliable',
-                  'All drivers are verified. Your safety is our priority.'),
-              _heroSlide('Across\nCameroon',
-                  'Yaoundé, Douala, Bafoussam and more destinations.'),
+              _heroSlide(l.homeHeroTitle, l.homeHeroBody),
+              _heroSlide(l.homeHeroTravelSmarterTitle,
+                  l.homeHeroTravelSmarterBody),
+              _heroSlide(l.homeHeroSafeTitle,
+                  l.homeHeroSafeBody),
+              _heroSlide(l.homeHeroCameroonTitle,
+                  l.homeHeroCameroonBody),
             ],
           ),
         ),
@@ -352,6 +335,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _heroSlide(String title, String sub) {
+    final l = AppLocalizations.of(context);
     return Stack(fit: StackFit.expand, children: [
       Image.asset('assets/images/hero_banner.png', fit: BoxFit.cover),
       Container(decoration: const BoxDecoration(gradient: LinearGradient(
@@ -373,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ElevatedButton.icon(
               onPressed: _openSearch,
               icon: const Icon(Icons.arrow_forward, size: 13),
-              label: const Text('Get Started'),
+              label: Text(l.homeGetStarted),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1B6B45),
                 foregroundColor: Colors.white,
@@ -394,12 +378,13 @@ class _HomeScreenState extends State<HomeScreen> {
   // the same height — no fixed `height:` and no Spacer() reserving
   // empty space.
   Widget _buildFindCard() {
+    final l = AppLocalizations.of(context);
     const green = Color(0xFF1B6B45);
     return _ActionCard(
       color: green,
       icon: Icons.search_rounded,
-      title: 'Find a Ride',
-      subtitle: 'Search for rides to your destination',
+      title: l.homeFindRide,
+      subtitle: l.homeFindRideSubtitle,
       onTap: _openSearch,
     );
   }
@@ -408,18 +393,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildOfferCard() {
     // A steady blue reads as trustworthy/professional for an intercity
     // rideshare context, and sits well next to the green Find card.
+    final l = AppLocalizations.of(context);
     const blue = Color(0xFF1F5C8B);
     return _ActionCard(
       color: blue,
       icon: Icons.directions_car,
-      title: 'Offer a Ride',
-      subtitle: 'Post your trip and fill your empty seats',
+      title: l.homeOfferRide,
+      subtitle: l.homeOfferRideSubtitle,
       onTap: () => openDriverFlow(context),
     );
   }
 
   // ── Ride together banner ──────────────────────────────────────
   Widget _buildRideTogetherBanner() {
+    final l = AppLocalizations.of(context);
     return Container(
       height: 150,
       decoration: BoxDecoration(
@@ -441,14 +428,14 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Ride together, save more',
+                Text(l.homeRideTogetherTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Color(0xFF1B6B45),
+                  style: const TextStyle(color: Color(0xFF1B6B45),
                     fontWeight: FontWeight.w800, fontSize: 15, height: 1.15)),
                 const SizedBox(height: 6),
-                const Text('Share your ride, split\nthe fare and reduce cost.',
-                  style: TextStyle(color: AppColors.textSecondary,
+                Text(l.homeRideTogetherBody,
+                  style: const TextStyle(color: AppColors.textSecondary,
                     fontSize: 13, height: 1.3)),
                 const SizedBox(height: 8),
                 OutlinedButton(
@@ -460,11 +447,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text('Learn More', style: TextStyle(color: Color(0xFF1B6B45),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text(l.homeLearnMore, style: const TextStyle(color: Color(0xFF1B6B45),
                       fontWeight: FontWeight.w700, fontSize: 12.5)),
-                    SizedBox(width: 5),
-                    Icon(Icons.arrow_forward, size: 12, color: Color(0xFF1B6B45)),
+                    const SizedBox(width: 5),
+                    const Icon(Icons.arrow_forward, size: 12, color: Color(0xFF1B6B45)),
                   ]),
                 ),
               ],
@@ -477,6 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Stats ─────────────────────────────────────────────────────
   Widget _buildStats() {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
@@ -488,9 +476,9 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
             child: const Icon(Icons.groups_outlined, color: Colors.white, size: 22)),
           const SizedBox(width: 10),
-          const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('15K+', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primary)),
-            Text('Happy riders\nusing HolaRide', style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary, height: 1.3)),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('15K+', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primary)),
+            Text(l.homeHappyRiders, style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary, height: 1.3)),
           ]),
         ])),
         Container(height: 44, width: 1, color: AppColors.border),
@@ -499,9 +487,9 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
             child: const Icon(Icons.route_outlined, color: Colors.white, size: 22)),
           const SizedBox(width: 10),
-          const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('40K+', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primary)),
-            Text('Trip hours\ncompleted', style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary, height: 1.3)),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('40K+', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primary)),
+            Text(l.homeTripHours, style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary, height: 1.3)),
           ]),
         ])),
       ]),
@@ -510,6 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Trips ─────────────────────────────────────────────────────
   Widget _buildTripsBody() {
+    final l = AppLocalizations.of(context);
     if (_loadingTrips) return Container(
       height: 140,
       decoration: BoxDecoration(
@@ -547,13 +536,16 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(20)),
-          child: Text('${_nearbyTrips.length} trip${_nearbyTrips.length > 1 ? 's' : ''} available',
+          child: Text(_nearbyTrips.length == 1
+              ? l.homeTripsAvailableSingular(_nearbyTrips.length)
+              : l.homeTripsAvailablePlural(_nearbyTrips.length),
             style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600))),
       ]),
     ]);
   }
 
   Widget _buildEmptyTrips() {
+    final l = AppLocalizations.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: SizedBox(
@@ -570,12 +562,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 border: Border.all(color: AppColors.primary.withOpacity(.2), width: 1.5)),
               child: const Icon(Icons.directions_car_outlined, color: AppColors.primary, size: 28)),
             const SizedBox(height: 14),
-            const Text('No trips available right now',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
+            Text(l.homeNoTrips,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textPrimary)),
             const SizedBox(height: 6),
-            const Text('Try a different route or check again later.',
+            Text(l.homeNoTripsHint,
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
             const SizedBox(height: 18),
             ElevatedButton(
               onPressed: _openSearch,
@@ -585,8 +577,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-              child: const Text('Explore popular routes',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
+              child: Text(l.homeExploreRoutes,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
           ])),
         ]),
       ),
@@ -675,9 +667,8 @@ class _TripCard extends StatelessWidget {
   const _TripCard({required this.trip, required this.onTap});
 
   String _t(DateTime t) => '${t.hour.toString().padLeft(2,'0')}:${t.minute.toString().padLeft(2,'0')}';
-  String _d(DateTime t) {
-    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return '${t.day} ${m[t.month-1]}';
+  String _d(BuildContext context, DateTime t) {
+    return '${t.day} ${monthAbbrev(context, t.month)}';
   }
   String _p(num v) {
     final s = v.toStringAsFixed(0);
@@ -691,6 +682,7 @@ class _TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final initial = trip.driverName.isNotEmpty ? trip.driverName[0].toUpperCase() : '?';
     return GestureDetector(
       onTap: onTap,
@@ -711,7 +703,7 @@ class _TripCard extends StatelessWidget {
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text(_p(trip.pricePerSeat),
                 style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.primary)),
-              const Text('per seat', style: TextStyle(fontSize: 9.5, color: AppColors.textSecondary)),
+              Text(l.homePerSeat, style: const TextStyle(fontSize: 9.5, color: AppColors.textSecondary)),
             ]),
           ]),
           const SizedBox(height: 4),
@@ -719,7 +711,7 @@ class _TripCard extends StatelessWidget {
           Row(children: [
             const Icon(Icons.schedule_outlined, size: 12, color: AppColors.textSecondary),
             const SizedBox(width: 4),
-            Text('${_d(trip.departureTime)} · ${_t(trip.departureTime)}',
+            Text('${_d(context, trip.departureTime)} · ${_t(trip.departureTime)}',
               style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
           ]),
           const Divider(height: 16),
@@ -757,7 +749,7 @@ class _TripCard extends StatelessWidget {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 const Icon(Icons.event_seat_outlined, size: 12, color: AppColors.primary),
                 const SizedBox(width: 4),
-                Text('${trip.seatsAvailable} left',
+                Text(l.homeSeatsLeft(trip.seatsAvailable),
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
               ])),
           ]),
