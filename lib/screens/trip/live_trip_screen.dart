@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../models/trip.dart';
 import '../../services/driver_service.dart';
 import '../../services/location_sharing_service.dart';
+import '../../services/route_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 
@@ -34,13 +33,12 @@ import '../../theme/app_colors.dart';
 /// Le flux d'origine du driver (_init, _driverCard) est inchangé en
 /// dehors de ce nouvel état terminal partagé.
 ///
-/// ✅ NOUVEAU (marqueurs) : les icônes des marqueurs (conducteur,
-/// passagers, moi) sont maintenant dessinées via Canvas
-/// (_createColoredMarker) plutôt qu'avec
-/// BitmapDescriptor.defaultMarkerWithHue(), que
-/// google_maps_flutter_web ignore souvent et rend systématiquement en
-/// rouge quelle que soit la teinte demandée. Le rendu Canvas est
-/// identique sur web et mobile.
+/// ✅ NOUVEAU (marqueurs) : pins standards Google Maps
+/// (BitmapDescriptor.defaultMarkerWithHue) — vert conducteur, orange
+/// passagers, bleu moi. NOTE : google_maps_flutter_web a par le passé
+/// ignoré la teinte demandée et rendu tous les pins en rouge ; à
+/// vérifier sur le build web si ce comportement persiste avec la
+/// version actuelle du package.
 class LiveTripScreen extends StatefulWidget {
   final Trip trip;
   const LiveTripScreen({super.key, required this.trip});
@@ -72,13 +70,17 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   // terminal simple.
   bool _tripEnded = false;
 
-  // ✅ NOUVEAU : icônes de marqueur générées via Canvas, chargées une
-  // fois de façon asynchrone dans _init(). Null tant qu'elles ne sont
-  // pas prêtes — _buildMarkers() retombe sur defaultMarkerWithHue en
-  // attendant, uniquement le temps du tout premier rendu.
-  BitmapDescriptor? _driverIcon;
-  BitmapDescriptor? _passengerIcon;
-  BitmapDescriptor? _meIcon;
+  // Distance/ETA between the driver and me (passenger view only, see
+  // _maybeFetchRoute). Compute Routes is a billed call, so this is
+  // refreshed at most every 30s, or sooner if the driver has moved
+  // noticeably — not on every ~4s GPS tick.
+  static const _routeMinInterval = Duration(seconds: 30);
+  static const _routeMinMoveMeters = 300;
+  RouteResult? _route;
+  DateTime? _routeFetchedAt;
+  double? _routeOriginLat;
+  double? _routeOriginLng;
+  bool _routeFetchInFlight = false;
 
   // Yaoundé — fallback center before the first position arrives.
   static const _fallbackCenter = LatLng(3.848, 11.502);
@@ -91,51 +93,11 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     _init();
   }
 
-  /// Draws a simple colored circle marker with a white border, rendered
-  /// via Canvas so it's identical on web and mobile — unlike
-  /// BitmapDescriptor.defaultMarkerWithHue(), which google_maps_flutter_web
-  /// often ignores and renders red regardless of the hue requested.
-  Future<BitmapDescriptor> _createColoredMarker(Color color) async {
-    const double size = 90;
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, size, size));
-
-    final fillPaint = Paint()..color = color;
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6;
-
-    const center = Offset(size / 2, size / 2);
-    const radius = size / 2 - 6;
-    canvas.drawCircle(center, radius, fillPaint);
-    canvas.drawCircle(center, radius, borderPaint);
-
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(size.toInt(), size.toInt());
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
-  }
-
   Future<void> _init() async {
     final user = await SessionService.instance.getUser();
     if (!mounted) return;
     _myId = user?.id;
     _isDriver = _myId != null && _myId == widget.trip.driverId;
-
-    // ✅ NOUVEAU : générer les trois icônes en parallèle, une seule
-    // fois. Pas bloquant pour le reste de l'init — on ne fait
-    // qu'attendre le résultat ici pour que le tout premier
-    // _buildMarkers() les ait déjà disponibles.
-    final iconResults = await Future.wait([
-      _createColoredMarker(AppColors.success),   // conducteur — vert
-      _createColoredMarker(AppColors.warning),   // passagers — orange/gold
-      _createColoredMarker(AppColors.primary),   // moi — couleur principale de l'app
-    ]);
-    if (!mounted) return;
-    _driverIcon = iconResults[0];
-    _passengerIcon = iconResults[1];
-    _meIcon = iconResults[2];
 
     // Consentement passager AVANT tout appel à _svc.start(). Le driver
     // n'est jamais concerné par ce bloc (if (!_isDriver)).
@@ -210,6 +172,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
         if (first || _follow) {
           _moveCamera(LatLng(p.latitude, p.longitude));
         }
+        _maybeFetchRoute();
       }
     });
 
@@ -233,6 +196,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
           _hadFix = true;
           if (first || _follow) _moveCamera(target);
         }
+        _maybeFetchRoute();
       });
     }
 
@@ -323,6 +287,68 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     Future.delayed(const Duration(milliseconds: 400), () => _programmaticMove = false);
   }
 
+  /// Refetches distance/ETA between the driver and me, throttled to at
+  /// most once per [_routeMinInterval] unless the driver has moved past
+  /// [_routeMinMoveMeters] since the last call. Passenger view only —
+  /// there's no single "other party" to route to from the driver's own
+  /// screen once multiple passengers are involved.
+  void _maybeFetchRoute() {
+    if (_isDriver) return;
+    final driver = _driverPos;
+    final me = _me;
+    if (driver == null || me == null || _routeFetchInFlight) return;
+
+    final now = DateTime.now();
+    final elapsed = _routeFetchedAt == null ? null : now.difference(_routeFetchedAt!);
+    final moved = _routeOriginLat == null
+        ? null
+        : Geolocator.distanceBetween(
+            _routeOriginLat!, _routeOriginLng!, driver.latitude, driver.longitude);
+    final due = elapsed == null ||
+        elapsed >= _routeMinInterval ||
+        (moved != null && moved >= _routeMinMoveMeters);
+    if (!due) return;
+
+    _routeFetchInFlight = true;
+    _routeOriginLat = driver.latitude;
+    _routeOriginLng = driver.longitude;
+    RouteService.instance
+        .fetchRoute(
+          originLat: driver.latitude,
+          originLng: driver.longitude,
+          destLat: me.latitude,
+          destLng: me.longitude,
+        )
+        .then((result) {
+      _routeFetchInFlight = false;
+      _routeFetchedAt = DateTime.now();
+      if (!mounted || result == null) return;
+      setState(() => _route = result);
+    });
+  }
+
+  Set<Polyline> _buildPolylines() {
+    final r = _route;
+    if (r == null || r.points.length < 2) return {};
+    return {
+      Polyline(
+        polylineId: const PolylineId('driver-route'),
+        points: r.points,
+        color: AppColors.primary,
+        width: 4,
+      ),
+    };
+  }
+
+  String? get _routeLabel {
+    final r = _route;
+    if (r == null) return null;
+    final km = r.distanceMeters / 1000;
+    final kmLabel = km >= 10 ? km.toStringAsFixed(0) : km.toStringAsFixed(1);
+    final mins = (r.duration.inSeconds / 60).round();
+    return '$kmLabel km · ${mins < 1 ? '<1' : mins} min';
+  }
+
   void _recenter() {
     setState(() => _follow = true);
     final target = _isDriver
@@ -340,16 +366,13 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   Set<Marker> _buildMarkers() {
     final markers = <Marker>{};
 
-    // Driver's marker (green, rotated by heading, flat on the map).
+    // Driver's marker — standard green pin.
     final d = _driverPos;
     if (d != null) {
       markers.add(Marker(
         markerId: const MarkerId('driver'),
         position: LatLng(d.latitude, d.longitude),
-        rotation: d.heading ?? 0,
-        flat: true,
-        anchor: const Offset(0.5, 0.5),
-        icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         infoWindow: InfoWindow(title: widget.trip.driverName, snippet: widget.trip.vehicleLabel),
         zIndex: 3,
       ));
@@ -363,7 +386,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
       markers.add(Marker(
         markerId: MarkerId('passenger-${entry.key}'),
         position: LatLng(p.latitude, p.longitude),
-        icon: _passengerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         infoWindow: InfoWindow(title: _names[entry.key] ?? 'Passenger'),
         zIndex: 2,
       ));
@@ -375,7 +398,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
       markers.add(Marker(
         markerId: const MarkerId('me'),
         position: LatLng(_me!.latitude, _me!.longitude),
-        icon: _meIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         infoWindow: const InfoWindow(title: 'You'),
         zIndex: 1,
       ));
@@ -504,6 +527,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
           ),
           onMapCreated: (c) => _map = c,
           markers: _buildMarkers(),
+          polylines: _buildPolylines(),
           // Any user-initiated camera move disables auto-follow until
           // the re-center button is tapped. Only armed after the first
           // fix: on web this callback also fires during initial render,
@@ -592,6 +616,17 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
                       color: _isStale ? AppColors.danger : AppColors.success)),
             ]),
         ]),
+
+        if (_routeLabel != null) ...[
+          const SizedBox(height: 8),
+          Row(children: [
+            const Icon(Icons.route_outlined, size: 14, color: AppColors.textSecondary),
+            const SizedBox(width: 6),
+            Text(_routeLabel!,
+                style: const TextStyle(
+                    fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+          ]),
+        ],
 
         // Séparateur + toggle de partage, uniquement si la permission
         // GPS a bien été obtenue (sinon rien à activer/couper).
