@@ -8,7 +8,6 @@ import '../../services/booking_service.dart';
 import '../../services/review_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
-import '../../utils/date_labels.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/profile_icon_button.dart';
@@ -27,15 +26,6 @@ import 'rebook_screen.dart';
 ///
 /// Guests (no account yet) see a login prompt here instead of an
 /// empty/erroring list — there's nothing to fetch without an account.
-///
-/// ✅ NOUVEAU : l'accès à [LiveTripScreen] (bannière verte + bouton
-/// "Track" dans le résumé) est maintenant STRICTEMENT conditionné à
-/// `trip.status == 'ongoing'`. Avant ce correctif, `trip.status`
-/// pouvait rester périmé (bug backend/parsing corrigé séparément dans
-/// `schemas.py` / `booking.dart`) — même corrigé côté données, on
-/// verrouille aussi ici pour qu'un trip `completed`, `cancelled` ou
-/// tout autre statut ne puisse plus jamais rouvrir la carte live,
-/// quelle que soit la source du problème.
 class MyBookingsScreen extends StatefulWidget {
   /// Bumped by MainTabScreen every time this tab is tapped, since this
   /// screen lives inside an IndexedStack and otherwise only ever loads
@@ -176,14 +166,6 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         .then((_) => _load());
   }
 
-  /// ✅ NOUVEAU : seul point de vérité pour "est-ce que la carte live
-  /// est accessible pour ce trip ?" — réutilisé partout (bannière,
-  /// bouton Track) pour ne jamais avoir deux logiques qui divergent.
-  bool _isLiveTrackable(Booking b) {
-    final trip = b.trip;
-    return trip != null && trip.status == 'ongoing';
-  }
-
   Future<void> _openBooking(Booking booking) async {
     if (booking.status == BookingStatus.pendingDriverAcceptance && booking.trip != null) {
       Navigator.of(context).push(
@@ -219,12 +201,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   void _showSummary(Booking booking) {
     final l = AppLocalizations.of(context);
     final trip = booking.trip;
-    // ✅ NOUVEAU : le chat reste ouvert pour paid/completed comme avant
-    // (discuter après coup reste utile), mais "Track" — l'accès à la
-    // carte live — ne dépend plus du statut du BOOKING : il dépend
-    // exclusivement du statut du TRIP, et seulement 'ongoing'.
     final canChat = booking.status == BookingStatus.paid || booking.status == BookingStatus.completed;
-    final canTrack = _isLiveTrackable(booking); // ✅ NOUVEAU
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -281,55 +258,47 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     ? l.bookingsSeatPlural(booking.seats)
                     : l.bookingsSeatSingular(booking.seats),
                 style: const TextStyle(color: AppColors.textSecondary)),
-            // ✅ NOUVEAU : le Row Chat/Track ne se construit que si au
-            // moins l'un des deux boutons a une raison d'exister — sinon
-            // on se retrouve avec une rangée vide (ex: booking paid mais
-            // trip déjà completed entre-temps → canChat true, canTrack
-            // false → on ne montre plus que "Chat", plus jamais "Track").
-            if (trip != null && (canChat || canTrack)) ...[
+            if (canChat && trip != null) ...[
               const SizedBox(height: 18),
               Row(
                 children: [
-                  if (canChat)
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  ChatScreen(tripId: booking.tripId ?? trip.id),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                        label: Text(l.bookingsChat),
-                      ),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ChatScreen(tripId: booking.tripId ?? trip.id),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                      label: Text(l.bookingsChat),
                     ),
-                  if (canChat && canTrack) const SizedBox(width: 10),
-                  // ✅ NOUVEAU : "Track" ne s'affiche plus du tout si le
-                  // trip n'est pas 'ongoing' — avant, ce bouton existait
-                  // toujours pour paid/completed et redirigeait à tort
-                  // vers TripDetailScreen (ou pire, vers LiveTripScreen
-                  // si trip.status était resté périmé sur 'ongoing').
-                  // ✅ CORRIGÉ : `trip != null` répété ici (en plus de
-                  // canTrack) pour que Dart promeuve `trip` en non-nullable
-                  // dans ce bloc — `canTrack` seul ne suffit pas, le
-                  // compilateur ne peut pas savoir que _isLiveTrackable()
-                  // a déjà vérifié la nullité en interne.
-                  if (canTrack && trip != null)
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pop();
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        // While the trip is ongoing, "Track" means the
+                        // real live map; otherwise fall back to the
+                        // plain trip detail as before.
+                        if (trip.status == 'ongoing') {
                           Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => LiveTripScreen(trip: trip)),
                           );
-                        },
-                        icon: const Icon(Icons.my_location, size: 18),
-                        label: Text(l.bookingsTrack),
-                      ),
+                        } else {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => TripDetailScreen(tripId: trip.id)),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.my_location, size: 18),
+                      label: Text(l.bookingsTrack),
                     ),
+                  ),
                 ],
               ),
             ],
@@ -401,16 +370,16 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
             tabs: [
-              Tab(text: l.bookingsAll),
               Tab(text: l.bookingsUpcoming),
+              Tab(text: l.bookingsAll),
               Tab(text: l.bookingsPast),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            _buildList(_bookings),
             _buildList(_bookings.where((b) => _upcomingStatuses.contains(b.status)).toList()),
+            _buildList(_bookings),
             _buildList(_bookings.where((b) => !_upcomingStatuses.contains(b.status)).toList()),
           ],
         ),
@@ -454,11 +423,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           final isPast = !_upcomingStatuses.contains(b.status) 
           || b.status == BookingStatus.pendingPayment
           || b.status == BookingStatus.cancelled;
-          // ✅ NOUVEAU : la bannière "Trip started — follow live" utilise
-          // désormais exactement la même règle que le bouton Track
-          // (_isLiveTrackable), donc plus jamais de divergence entre les
-          // deux points d'entrée vers LiveTripScreen.
-          final isLive = b.status == BookingStatus.paid && _isLiveTrackable(b);
+          final isLive = b.status == BookingStatus.paid && trip != null && trip.status == 'ongoing';
           
           return Dismissible(
             key: Key(b.id),
@@ -504,15 +469,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           },
             child: InkWell(
               onTap: () => _openBooking(b),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(.04),
-                    blurRadius: 8, offset: const Offset(0, 2))]),
+                  borderRadius: BorderRadius.circular(20),
+                  // Past bookings: quieter (flat border); active: elevated.
+                  border: isPast ? Border.all(color: AppColors.border) : null,
+                  boxShadow: isPast
+                      ? null
+                      : [BoxShadow(color: Colors.black.withOpacity(.05),
+                          blurRadius: 14, offset: const Offset(0, 5))]),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   // Header row: route + status badge
                   Row(children: [
@@ -523,50 +491,59 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                     const SizedBox(width: 8),
                     StatusBadge(status: b.status),
                   ]),
-                  // Pickup/dropoff
+                  // Pickup / drop-off points
                   if (trip != null && trip.originLocation.isNotEmpty) ...[
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 10),
                     Row(children: [
-                      const Icon(Icons.fiber_manual_record, size: 9, color: AppColors.primary),
-                      const SizedBox(width: 5),
+                      const Icon(Icons.location_on, size: 15, color: AppColors.primary),
+                      const SizedBox(width: 7),
                       Expanded(child: Text(trip.originLocation, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600))),
+                        style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary, fontWeight: FontWeight.w600))),
                     ]),
                   ],
+                  if (trip != null && trip.originLocation.isNotEmpty && trip.destinationLocation.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 6.5),
+                      child: SizedBox(
+                        height: 10,
+                        child: Column(
+                          children: List.generate(2, (_) => Expanded(
+                            child: Container(width: 2, margin: const EdgeInsets.symmetric(vertical: 1),
+                                color: AppColors.border),
+                          )),
+                        ),
+                      ),
+                    ),
                   if (trip != null && trip.destinationLocation.isNotEmpty) ...[
-                    const SizedBox(height: 3),
+                    if (trip.originLocation.isEmpty) const SizedBox(height: 10),
                     Row(children: [
-                      const Icon(Icons.location_on, size: 10, color: AppColors.gold),
-                      const SizedBox(width: 5),
+                      const Icon(Icons.location_on, size: 15, color: AppColors.danger),
+                      const SizedBox(width: 7),
                       Expanded(child: Text(trip.destinationLocation, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600))),
+                        style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary, fontWeight: FontWeight.w600))),
                     ]),
                   ],
-                  const SizedBox(height: 8),
-                  // Date + price row
-                  Row(children: [
-                    if (trip != null) ...[
-                      const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textSecondary),
-                      const SizedBox(width: 4),
-                      Text('${_dateLabel(trip.departureTime)} · ${_timeLabel(trip.departureTime)}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      const SizedBox(width: 8),
-                    ],
-                    const Icon(Icons.event_seat_outlined, size: 12, color: AppColors.textSecondary),
-                    const SizedBox(width: 4),
-                    Text(b.seats > 1 ? l.bookingsSeatPlural(b.seats) : l.bookingsSeatSingular(b.seats),
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                    const Spacer(),
-                    // Price
+                  const SizedBox(height: 12),
+                  // Meta chips + price
+                  Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                    Expanded(
+                      child: Wrap(spacing: 8, runSpacing: 8, children: [
+                        if (trip != null) ...[
+                          _BookingChip(icon: Icons.calendar_month_outlined, label: _dateLabel(trip.departureTime)),
+                          _BookingChip(icon: Icons.schedule, label: _timeLabel(trip.departureTime)),
+                        ],
+                        _BookingChip(
+                          icon: Icons.event_seat_outlined,
+                          label: b.seats > 1 ? l.bookingsSeatPlural(b.seats) : l.bookingsSeatSingular(b.seats),
+                        ),
+                      ]),
+                    ),
+                    const SizedBox(width: 8),
                     Text(_priceLabel(b.amountTotal),
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.primary)),
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.primary)),
                   ]),
-                   // Track this trip — always available once paid, styled differently
-                  // once the trip is actually 'ongoing'. This gives the passenger a
-                  // reliable way into LiveTripScreen even if trip_status hasn't
-                  // propagated correctly yet — LiveTripScreen itself shows "Waiting
-                  // for signal..." gracefully when there's nothing to show.
-                  if (b.status == BookingStatus.paid && trip != null) ...[
+                  // Live trip — follow the driver
+                  if (isLive) ...[
                     const SizedBox(height: 10),
                     InkWell(
                       onTap: () => Navigator.of(context).push(
@@ -577,24 +554,16 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                         decoration: BoxDecoration(
-                          color: isLive ? AppColors.successBg : AppColors.infoBg,
+                          color: AppColors.successBg,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isLive ? AppColors.success.withOpacity(.3) : AppColors.primary.withOpacity(.2),
-                          ),
+                          border: Border.all(color: AppColors.success.withOpacity(.3)),
                         ),
-                        child: Row(children: [
-                          Icon(isLive ? Icons.gps_fixed : Icons.map_outlined, size: 15,
-                              color: isLive ? AppColors.success : AppColors.primary),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(
-                            isLive ? 'Trip started — follow your driver live' : 'View live map',
-                            style: TextStyle(
-                              color: isLive ? AppColors.success : AppColors.primary,
-                              fontWeight: FontWeight.w700, fontSize: 12.5,
-                            ),
-                          )),
-                          Icon(Icons.chevron_right, size: 16, color: isLive ? AppColors.success : AppColors.primary),
+                        child: const Row(children: [
+                          Icon(Icons.gps_fixed, size: 15, color: AppColors.success),
+                          SizedBox(width: 8),
+                          Expanded(child: Text('Trip started — follow your driver live',
+                            style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700, fontSize: 12.5))),
+                          Icon(Icons.chevron_right, size: 16, color: AppColors.success),
                         ]),
                       ),
                     ),
@@ -609,14 +578,18 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                       borderRadius: BorderRadius.circular(10),
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withOpacity(.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.gold.withOpacity(.25)),
+                        ),
                         child: Row(children: [
-                          const Icon(Icons.star_outline, size: 15, color: AppColors.primary),
+                          const Icon(Icons.star_rounded, size: 16, color: AppColors.gold),
                           const SizedBox(width: 8),
                           Expanded(child: Text(l.bookingsRatePassenger(pending.first.name),
-                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12.5))),
-                          const Icon(Icons.chevron_right, size: 15, color: AppColors.primary),
+                            style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 12.5))),
+                          const Icon(Icons.chevron_right, size: 15, color: AppColors.textSecondary),
                         ])),
                     ),
                   ],
@@ -651,7 +624,46 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
   String _timeLabel(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
+  static const _monthsEn = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  static const _monthsFr = [
+    'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin',
+    'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'
+  ];
+
   String _dateLabel(DateTime t) {
-    return '${t.day} ${monthAbbrev(context, t.month)}';
+    final months = Localizations.localeOf(context).languageCode == 'fr'
+        ? _monthsFr
+        : _monthsEn;
+    return '${t.day} ${months[t.month - 1]}';
+  }
+}
+
+// ══════════════════════════════════════════════
+// BOOKING CHIP — small icon+label meta chip
+// ══════════════════════════════════════════════
+class _BookingChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _BookingChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border.withOpacity(.8)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 13, color: AppColors.textSecondary),
+        const SizedBox(width: 5),
+        Text(label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+      ]),
+    );
   }
 }

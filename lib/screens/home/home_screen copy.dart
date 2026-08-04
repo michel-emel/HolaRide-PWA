@@ -224,10 +224,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.border)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text(isFr ? '🇫🇷' : '🇬🇧', style: const TextStyle(fontSize: 16)),
-                      const SizedBox(width: 6),
-                      Text(isFr ? 'Français' : 'English',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      Text(isFr ? '🇫🇷' : '🇬🇧', style: const TextStyle(fontSize: 15)),
+                      const SizedBox(width: 5),
+                      Text(isFr ? 'FR' : 'EN',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.expand_more, size: 14, color: AppColors.textSecondary),
                     ])));
               }),
             const SizedBox(width: 10),
@@ -478,36 +480,28 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Stats — clean, numbers-first ──────────────────────────────
+  // ── Stats — brand gradient card ───────────────────────────────
   Widget _buildStats() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, Color(0xFF2D9E6E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withOpacity(.25), blurRadius: 16, offset: const Offset(0, 6)),
+        ],
       ),
       child: Row(children: [
         const Expanded(
-          child: Column(children: [
-            Text('15K+',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 21, color: AppColors.primary)),
-            SizedBox(height: 4),
-            Text('Happy riders using HolaRide',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.3)),
-          ]),
+          child: _StatItem(icon: Icons.groups_rounded, value: '15K+', label: 'Happy riders\nusing HolaRide'),
         ),
-        Container(width: 1, height: 40, color: AppColors.border),
+        Container(width: 1, height: 44, color: Colors.white24),
         const Expanded(
-          child: Column(children: [
-            Text('40K+',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 21, color: AppColors.primary)),
-            SizedBox(height: 4),
-            Text('Trip hours completed',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.3)),
-          ]),
+          child: _StatItem(icon: Icons.route_rounded, value: '40K+', label: 'Trip hours\ncompleted'),
         ),
       ]),
     );
@@ -787,5 +781,36 @@ class _TripCard extends StatelessWidget {
         ]),
       ),
     );
+  }
+}
+
+// ══════════════════════════════════════════════
+// STAT ITEM — white-on-gradient stat block
+// ══════════════════════════════════════════════
+class _StatItem extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  const _StatItem({required this.icon, required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Container(
+        width: 40, height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(.18),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+      const SizedBox(width: 10),
+      Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+        Text(value,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 19, color: Colors.white)),
+        Text(label,
+            style: TextStyle(fontSize: 10.5, color: Colors.white.withOpacity(.85), height: 1.3)),
+      ]),
+    ]);
   }
 }

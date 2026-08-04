@@ -94,8 +94,10 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
     super.initState();
     _init();
   }
+ 
 
   Future<void> _init() async {
+    debugPrint('>>> LiveTripScreen _init: trip=${widget.trip.id}');
     final user = await SessionService.instance.getUser();
     if (!mounted) return;
     _myId = user?.id;
@@ -166,6 +168,7 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
 
     // Re-render on every incoming position; follow the driver if enabled.
     _posSub = _svc.positions.listen((p) {
+       debugPrint('>>> position received: userId=${p.userId} isDriver=$_isDriver');
       if (!mounted) return;
       setState(() {});
       if (!_isDriver && p.userId == widget.trip.driverId) {
@@ -356,10 +359,11 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
   /// there's no single "other party" to route to from the driver's own
   /// screen once multiple passengers are involved.
   void _maybeFetchRoute() {
+    debugPrint('>>> maybeFetch: isDriver=$_isDriver driver=$_driverPos me=$_me inFlight=$_routeFetchInFlight');
     if (_isDriver) return;
     final driver = _driverPos;
     final me = _me;
-    if (driver == null || me == null || _routeFetchInFlight) return;
+    if (driver == null || _routeFetchInFlight) return;
 
     final now = DateTime.now();
     final elapsed = _routeFetchedAt == null ? null : now.difference(_routeFetchedAt!);
@@ -379,8 +383,8 @@ class _LiveTripScreenState extends State<LiveTripScreen> {
         .fetchRoute(
           originLat: driver.latitude,
           originLng: driver.longitude,
-          destLat: me.latitude,
-          destLng: me.longitude,
+          destLat: me?.latitude ?? 3.8480,
+          destLng: me?.longitude ?? 11.5021,
         )
         .then((result) {
       _routeFetchInFlight = false;

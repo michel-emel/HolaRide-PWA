@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'api_client.dart';
@@ -306,6 +307,7 @@ class LocationSharingService {
   }
 
   Future<void> _subscribe(String tripId) async {
+    debugPrint('[LocationSharingService] _subscribe called: tripId=$tripId');
     if (_stopped || tripId != _tripId) return;
 
     // Token court signé par le backend — c'est LUI qui porte notre
@@ -314,7 +316,9 @@ class LocationSharingService {
     try {
       final res = await _api.get('/trips/$tripId/realtime-token');
       token = (res as Map<String, dynamic>)['token'] as String;
-    } catch (_) {
+      debugPrint('[LocationSharingService] realtime-token fetched OK for tripId=$tripId');
+    } catch (e) {
+      debugPrint('[LocationSharingService] realtime-token fetch FAILED for tripId=$tripId: $e');
       _scheduleRetry(tripId);
       return;
     }
@@ -334,11 +338,14 @@ class LocationSharingService {
             value: tripId,
           ),
           callback: (payload) {
+            debugPrint('[LocationSharingService] postgres change received: ${payload.newRecord}');
             final p = _parseRealtimeRow(payload.newRecord);
             if (p != null) _emit(p);
           },
         )
         .subscribe((status, [error]) {
+          debugPrint('[LocationSharingService] channel subscribe status=$status'
+              '${error != null ? ' error=$error' : ''}');
           if (_stopped) return;
           if (status == RealtimeSubscribeStatus.subscribed) {
             _retrySeconds = 2; // reset du backoff après succès
