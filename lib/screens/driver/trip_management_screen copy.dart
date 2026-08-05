@@ -408,27 +408,22 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
-            labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5),
-            // Narrow phones (Pixel 7a): default horizontal labelPadding
-            // is 16px per side — too greedy for icon+text tabs.
-            labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+            labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
             tabs: [
               Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.group_outlined, size: 15),
-                const SizedBox(width: 4),
-                Flexible(child: Text('Requests (${_requests.length})',
-                    overflow: TextOverflow.ellipsis)),
+                const Icon(Icons.group_outlined, size: 16),
+                const SizedBox(width: 6),
+                Text('Requests (${_requests.length})'),
               ])),
               Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.event_available_outlined, size: 15),
-                const SizedBox(width: 4),
-                Flexible(child: Text('Bookings (${_confirmed.length})',
-                    overflow: TextOverflow.ellipsis)),
+                const Icon(Icons.event_available_outlined, size: 16),
+                const SizedBox(width: 6),
+                Text('Bookings (${_confirmed.length})'),
               ])),
               const Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.bolt_outlined, size: 15),
-                SizedBox(width: 4),
-                Flexible(child: Text('Trip actions', overflow: TextOverflow.ellipsis)),
+                Icon(Icons.bolt_outlined, size: 16),
+                SizedBox(width: 6),
+                Text('Trip actions'),
               ])),
             ],
           ),
@@ -543,6 +538,12 @@ class _TripManagementScreenState extends State<TripManagementScreen> {
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: AppColors.textPrimary)),
               const SizedBox(height: 14),
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+                Expanded(child: _TipItem(
+                  icon: Icons.chat_bubble_outline,
+                  title: 'Communicate',
+                  subtitle: 'Chat with your passenger before the trip.',
+                )),
+                SizedBox(width: 10),
                 Expanded(child: _TipItem(
                   icon: Icons.schedule,
                   title: 'Be on time',

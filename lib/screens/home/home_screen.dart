@@ -417,64 +417,48 @@ class _HomeScreenState extends State<HomeScreen> {
         border: Border.all(color: AppColors.border),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Row(children: [
-        // Left box — image only
-        Expanded(
-          flex: 4,
-          child: SizedBox(
-            height: double.infinity,
-            child: Image.asset('assets/images/ride_together.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.center),
-          ),
-        ),
-        // Right box — learn_more.png background + text + button
-        Expanded(
-          flex: 5,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.asset('assets/images/learn_more.png', fit: BoxFit.cover),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Ride together, save more',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Color(0xFF1B6B45),
-                        fontWeight: FontWeight.w800, fontSize: 15, height: 1.15)),
-                    const SizedBox(height: 6),
-                    const Text('Share your ride, split\nthe fare and reduce cost.',
-                      style: TextStyle(color: AppColors.textSecondary,
-                        fontSize: 13, height: 1.3)),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: () => openDriverFlow(context),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.border),
-                        backgroundColor: AppColors.surface,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Text('Learn More', style: TextStyle(color: Color(0xFF1B6B45),
-                          fontWeight: FontWeight.w700, fontSize: 11)),
-                        SizedBox(width: 5),
-                        Icon(Icons.arrow_forward, size: 12, color: Color(0xFF1B6B45)),
-                      ]),
-                    ),
-                  ],
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset('assets/images/learn_more.png', fit: BoxFit.cover),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Ride together, save more',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Color(0xFF1B6B45),
+                    fontWeight: FontWeight.w800, fontSize: 15, height: 1.15)),
+                const SizedBox(height: 6),
+                const Text('Share your ride, split\nthe fare and reduce cost.',
+                  style: TextStyle(color: AppColors.textSecondary,
+                    fontSize: 13, height: 1.3)),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () => openDriverFlow(context),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.border),
+                    backgroundColor: AppColors.surface,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('Learn More', style: TextStyle(color: Color(0xFF1B6B45),
+                      fontWeight: FontWeight.w700, fontSize: 11)),
+                    SizedBox(width: 5),
+                    Icon(Icons.arrow_forward, size: 12, color: Color(0xFF1B6B45)),
+                  ]),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 

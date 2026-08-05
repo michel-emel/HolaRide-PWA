@@ -33,7 +33,7 @@
             android:value="2" />
         <meta-data
         android:name="com.google.android.geo.API_KEY"
-        android:value="AIzaSyB0mITD2MWzmdNhcKbhy5Zg7-eKYTUO3_4"/>
+        android:value="${GOOGLE_MAPS_API_KEY}"/>
         <!-- Override the package's own declaration to set foregroundServiceType=location.
              tools:replace resolves the exported attribute conflict between our declaration
              and the one inside flutter_background_service_android. -->
