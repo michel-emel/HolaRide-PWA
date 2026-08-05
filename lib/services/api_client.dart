@@ -96,13 +96,15 @@ class ApiClient {
   }
 
   /// Multipart POST — used for endpoints that take files (vehicle
-  /// photos). [files] is a list of (field name, local file path) pairs
-  /// rather than a Map, since a Map can't hold multiple files under the
-  /// same repeated field name (e.g. several 'photos' entries).
+  /// photos, driver documents). [files] is a list of (field name, local
+  /// file path) pairs. [fileBytes] carries in-memory files as
+  /// (field name, (filename, bytes)) — needed on Flutter Web, where the
+  /// browser never exposes a real file path, only the bytes.
   Future<dynamic> postMultipart(
     String path, {
     Map<String, String>? fields,
     List<MapEntry<String, String>>? files,
+    List<MapEntry<String, MapEntry<String, List<int>>>>? fileBytes,
     bool auth = true,
   }) async {
     final request = http.MultipartRequest('POST', _uri(path));
@@ -113,6 +115,14 @@ class ApiClient {
     if (files != null) {
       for (final entry in files) {
         request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value));
+      }
+    }
+    if (fileBytes != null) {
+      for (final entry in fileBytes) {
+        final field = entry.key;
+        final filename = entry.value.key;
+        final bytes = entry.value.value;
+        request.files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
       }
     }
     final streamed = await request.send();

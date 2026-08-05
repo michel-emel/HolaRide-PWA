@@ -71,8 +71,7 @@ class _MainTabScreenState extends State<MainTabScreen> {
         if (active.isNotEmpty) {
           final t = active.first;
           tripId = t.id;
-          label = '${t.originCity} → ${t.destinationCity}'
-              ' · ${t.departureTime.day.toString().padLeft(2, '0')}/${t.departureTime.month.toString().padLeft(2, '0')}';
+          label = '${t.originCity} → ${t.destinationCity}';
         }
       } else {
         // Passenger: your next paid booking. Skip bookings without a
@@ -93,10 +92,8 @@ class _MainTabScreenState extends State<MainTabScreen> {
         if (active.isNotEmpty) {
           final b = active.first;
           tripId = b.tripId;
-          final t = b.trip;
-          label = t != null
-              ? '${t.originCity} → ${t.destinationCity}'
-                  ' · ${t.departureTime.day.toString().padLeft(2, '0')}/${t.departureTime.month.toString().padLeft(2, '0')}'
+          label = b.trip != null
+              ? '${b.trip!.originCity} → ${b.trip!.destinationCity}'
               : 'Active trip';
         }
       }
@@ -326,7 +323,7 @@ class _TripChatFab extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 175),
+                  constraints: const BoxConstraints(maxWidth: 140),
                   child: Text(
                     label,
                     maxLines: 1,

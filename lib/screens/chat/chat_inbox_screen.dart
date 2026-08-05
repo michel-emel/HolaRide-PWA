@@ -17,16 +17,14 @@ import '../trip/chat_screen.dart';
 /// of your own non-cancelled trips). Each entry is keyed uniquely by
 /// `trip_id`, since that's the real identity chat is actually built
 /// around server-side (`GET/POST /trips/{trip_id}/chat/messages`) — not
-/// by booking id. Several different bookings could in principle point
-/// at the same trip's chat (e.g. booking it more than once), so
-/// entries are deduplicated by trip_id to avoid listing the same
-/// conversation twice.
+/// by booking id.
 ///
-/// There's no backend endpoint that returns "all my active chats" in
-/// one call, so this is built by combining what's already fetched for
-/// My Bookings (passenger side) and My Trips (driver side) — both
-/// already carry enough route/date info to label each entry without
-/// an extra request per chat.
+/// IMPORTANT UX NOTE: several trips can share the exact same route
+/// label ("Yaoundé → Douala"), yet each one has its OWN separate
+/// conversation. That made it easy to open an old trip's chat while
+/// believing it was the active one. So entries now carry an explicit
+/// Active/Ended chip, active chats are sorted first, and past ones are
+/// visually muted.
 class ChatInboxScreen extends StatefulWidget {
   const ChatInboxScreen({super.key});
 
@@ -42,6 +40,7 @@ class _ChatEntry {
   final String destinationLocation;
   final DateTime departureTime;
   final bool isDriver;
+  final String status; // trip status: published/ongoing/completed/...
 
   _ChatEntry({
     required this.tripId,
@@ -51,7 +50,16 @@ class _ChatEntry {
     required this.destinationLocation,
     required this.departureTime,
     required this.isDriver,
+    required this.status,
   });
+
+  /// A chat is "active" while its trip is still alive — published or
+  /// ongoing. Completed/cancelled trips keep their chat readable but
+  /// clearly marked as ended.
+  bool get isActive {
+    final s = status.toLowerCase();
+    return s == 'published' || s == 'ongoing';
+  }
 }
 
 class _ChatInboxScreenState extends State<ChatInboxScreen> {
@@ -87,6 +95,8 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
           destinationLocation: trip?.destinationLocation ?? '',
           departureTime: trip?.departureTime ?? b.createdAt,
           isDriver: false,
+          status: trip?.status ??
+              (b.status == BookingStatus.completed ? 'completed' : 'published'),
         );
       }
     } catch (e) {
@@ -106,6 +116,7 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
           destinationLocation: t.destinationLocation,
           departureTime: t.departureTime,
           isDriver: true,
+          status: t.status,
         );
       }
     } catch (e) {
@@ -124,7 +135,11 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
 
     if (!mounted) return;
     final entries = byTripId.values.where((e) => !hiddenIds.contains(e.tripId)).toList()
-      ..sort((a, b) => b.departureTime.compareTo(a.departureTime));
+      ..sort((a, b) {
+        // Active conversations first, then most recent departure.
+        if (a.isActive != b.isActive) return a.isActive ? -1 : 1;
+        return b.departureTime.compareTo(a.departureTime);
+      });
     setState(() {
       _entries = entries;
       _loading = false;
@@ -222,97 +237,139 @@ class _ChatInboxScreenState extends State<ChatInboxScreen> {
                               }
                             },
                             child: InkWell(
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => ChatScreen(tripId: e.tripId)),
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.textPrimary.withOpacity(0.05),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => ChatScreen(tripId: e.tripId)),
                               ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 44,
-                                    height: 44,
-                                    decoration: const BoxDecoration(color: AppColors.infoBg, shape: BoxShape.circle),
-                                    child: Icon(
-                                      e.isDriver ? Icons.directions_car : Icons.chat_bubble_outline,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('${e.originCity} → ${e.destinationCity}',
-                                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5)),
-                                        if (e.originLocation.isNotEmpty || e.destinationLocation.isNotEmpty) ...[
-                                          const SizedBox(height: 2),
-                                          Row(
-                                            children: [
-                                              if (e.originLocation.isNotEmpty) ...[
-                                                const Icon(Icons.fiber_manual_record, size: 9, color: AppColors.primary),
-                                                const SizedBox(width: 4),
-                                                Flexible(
-                                                  child: Text(
-                                                    e.originLocation,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                        fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                                                  ),
-                                                ),
-                                              ],
-                                              if (e.originLocation.isNotEmpty && e.destinationLocation.isNotEmpty)
-                                                const Padding(
-                                                  padding: EdgeInsets.symmetric(horizontal: 4),
-                                                  child: Icon(Icons.arrow_forward, size: 9, color: AppColors.textSecondary),
-                                                ),
-                                              if (e.destinationLocation.isNotEmpty) ...[
-                                                const Icon(Icons.location_on, size: 10, color: AppColors.gold),
-                                                const SizedBox(width: 3),
-                                                Flexible(
-                                                  child: Text(
-                                                    e.destinationLocation,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                        fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  // Ended chats: quieter (flat border);
+                                  // active chats: elevated.
+                                  border: e.isActive ? null : Border.all(color: AppColors.border),
+                                  boxShadow: e.isActive
+                                      ? [
+                                          BoxShadow(
+                                            color: AppColors.textPrimary.withOpacity(0.05),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
                                           ),
+                                        ]
+                                      : null,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                          color: e.isActive
+                                              ? AppColors.infoBg
+                                              : AppColors.surfaceMuted,
+                                          shape: BoxShape.circle),
+                                      child: Icon(
+                                        e.isDriver ? Icons.directions_car : Icons.chat_bubble_outline,
+                                        color: e.isActive ? AppColors.primary : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(children: [
+                                            Flexible(
+                                              child: Text('${e.originCity} → ${e.destinationCity}',
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                      fontWeight: FontWeight.w800,
+                                                      fontSize: 14.5,
+                                                      color: e.isActive
+                                                          ? AppColors.textPrimary
+                                                          : AppColors.textSecondary)),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            // Active/Ended chip — THE
+                                            // disambiguator between several
+                                            // trips sharing the same route.
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 7, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: e.isActive
+                                                    ? AppColors.successBg
+                                                    : AppColors.surfaceMuted,
+                                                borderRadius: BorderRadius.circular(20),
+                                              ),
+                                              child: Text(
+                                                e.isActive ? 'Active' : 'Ended',
+                                                style: TextStyle(
+                                                    fontSize: 9.5,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: e.isActive
+                                                        ? AppColors.success
+                                                        : AppColors.textSecondary),
+                                              ),
+                                            ),
+                                          ]),
+                                          if (e.originLocation.isNotEmpty || e.destinationLocation.isNotEmpty) ...[
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              children: [
+                                                if (e.originLocation.isNotEmpty) ...[
+                                                  const Icon(Icons.fiber_manual_record, size: 9, color: AppColors.primary),
+                                                  const SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      e.originLocation,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                          fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                                    ),
+                                                  ),
+                                                ],
+                                                if (e.originLocation.isNotEmpty && e.destinationLocation.isNotEmpty)
+                                                  const Padding(
+                                                    padding: EdgeInsets.symmetric(horizontal: 4),
+                                                    child: Icon(Icons.arrow_forward, size: 9, color: AppColors.textSecondary),
+                                                  ),
+                                                if (e.destinationLocation.isNotEmpty) ...[
+                                                  const Icon(Icons.location_on, size: 10, color: AppColors.gold),
+                                                  const SizedBox(width: 3),
+                                                  Flexible(
+                                                    child: Text(
+                                                      e.destinationLocation,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                          fontSize: 11.5, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ],
+                                          const SizedBox(height: 2),
+                                          Text(_dateLabel(e.departureTime),
+                                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                                         ],
-                                        const SizedBox(height: 2),
-                                        Text(_dateLabel(e.departureTime),
-                                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(20)),
-                                    child: Text(
-                                      e.isDriver ? l.chatInboxDriver : l.chatInboxPassenger,
-                                      style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.primary),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(20)),
+                                      child: Text(
+                                        e.isDriver ? l.chatInboxDriver : l.chatInboxPassenger,
+                                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.primary),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-                                ],
+                                    const SizedBox(width: 4),
+                                    const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ), // InkWell
+                            ), // InkWell
                           ); // Dismissible
                         },
                       ),

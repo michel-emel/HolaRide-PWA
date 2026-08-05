@@ -61,12 +61,31 @@ class VehicleService {
   /// already supports multiple files under one repeated field name for
   /// exactly this reason. Uploads one at a time so a single failed
   /// file doesn't lose progress on the others already sent.
-  Future<void> uploadPhotos(String vehicleId, List<String> filePaths) async {
+  /// `POST /drivers/me/vehicle/{vehicle_id}/photos`, multipart. The
+  /// backend field name is `files` (matching `List[UploadFile] =
+  /// File(...)`). Uploads one at a time so a single failed file doesn't
+  /// lose the others.
+  ///
+  /// Accepts either local file paths (mobile) or in-memory bytes (web,
+  /// where the browser exposes no real path). Pass whichever you have.
+  Future<void> uploadPhotos(
+    String vehicleId,
+    List<String> filePaths, {
+    List<MapEntry<String, List<int>>>? fileBytes, // (filename, bytes) for web
+  }) async {
     for (final path in filePaths) {
       await _api.postMultipart(
         '/drivers/me/vehicle/$vehicleId/photos',
-        files: [MapEntry('photos', path)],
+        files: [MapEntry('files', path)],
       );
+    }
+    if (fileBytes != null) {
+      for (final entry in fileBytes) {
+        await _api.postMultipart(
+          '/drivers/me/vehicle/$vehicleId/photos',
+          fileBytes: [MapEntry('files', MapEntry(entry.key, entry.value))],
+        );
+      }
     }
   }
 }

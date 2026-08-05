@@ -104,16 +104,7 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
       _uploadError = null;
     });
     try {
-      if (kIsWeb) {
-        // Web: no file paths — send bytes with their real filenames.
-        final byteEntries = <MapEntry<String, List<int>>>[];
-        for (final f in picked) {
-          byteEntries.add(MapEntry(f.name, await f.readAsBytes()));
-        }
-        await VehicleService.instance.uploadPhotos(_vehicle!.id, const [], fileBytes: byteEntries);
-      } else {
-        await VehicleService.instance.uploadPhotos(_vehicle!.id, picked.map((f) => f.path).toList());
-      }
+      await VehicleService.instance.uploadPhotos(_vehicle!.id, picked.map((f) => f.path).toList());
       await _load();
     } catch (e) {
       // ignore: avoid_print
