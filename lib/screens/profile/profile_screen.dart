@@ -14,6 +14,7 @@ import '../../widgets/language_switcher.dart';
 import '../../widgets/primary_button.dart';
 import '../driver/driver_flow_router.dart';
 import '../driver/payout_history_screen.dart';
+import '../driver/vehicle_status_screen.dart';
 import '../main_tab_screen.dart';
 import 'edit_profile_screen.dart';
 import 'help_support_screen.dart';
@@ -175,7 +176,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               iconColor: AppColors.gold,
               label: l.profileMyVehicle,
               subtitle: 'Manage your vehicle details',
-              onTap: () => openDriverFlow(context),
+              onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const VehicleStatusScreen())),
             ),
             _buildModeSwitchTile(l),
             if (user?.canDrive ?? false)

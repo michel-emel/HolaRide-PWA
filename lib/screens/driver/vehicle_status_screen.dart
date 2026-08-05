@@ -50,6 +50,9 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
   final Map<DriverDocType, _StagedFile> _staged = {};
   DriverDocType? _sendingDoc;
 
+  // Photos staged locally (picked, not yet uploaded).
+  final List<_StagedFile> _stagedPhotos = [];
+
   @override
   void initState() {
     super.initState();
@@ -87,7 +90,7 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
     }
   }
 
-  Future<void> _addPhotos() async {
+  Future<void> _pickPhotos() async {
     if (_vehicle == null) return;
     final picker = ImagePicker();
     List<XFile> picked;
@@ -99,21 +102,41 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
       return;
     }
     if (picked.isEmpty) return;
+
+    // Stage locally — NOT uploaded yet.
+    final staged = <_StagedFile>[];
+    for (final f in picked) {
+      if (kIsWeb) {
+        staged.add(_StagedFile(bytes: await f.readAsBytes(), filename: f.name, isPdf: false));
+      } else {
+        staged.add(_StagedFile(path: f.path, filename: f.name, isPdf: false));
+      }
+    }
+    setState(() {
+      _stagedPhotos.addAll(staged);
+      _uploadError = null;
+    });
+  }
+
+  Future<void> _sendPhotos() async {
+    if (_vehicle == null || _stagedPhotos.isEmpty) return;
     setState(() {
       _uploading = true;
       _uploadError = null;
     });
     try {
-      if (kIsWeb) {
-        // Web: no file paths — send bytes with their real filenames.
-        final byteEntries = <MapEntry<String, List<int>>>[];
-        for (final f in picked) {
-          byteEntries.add(MapEntry(f.name, await f.readAsBytes()));
-        }
-        await VehicleService.instance.uploadPhotos(_vehicle!.id, const [], fileBytes: byteEntries);
-      } else {
-        await VehicleService.instance.uploadPhotos(_vehicle!.id, picked.map((f) => f.path).toList());
-      }
+      final paths = _stagedPhotos.where((s) => s.path != null).map((s) => s.path!).toList();
+      final byteEntries = _stagedPhotos
+          .where((s) => s.bytes != null)
+          .map((s) => MapEntry(s.filename, s.bytes!))
+          .toList();
+      await VehicleService.instance.uploadPhotos(
+        _vehicle!.id,
+        paths,
+        fileBytes: byteEntries.isEmpty ? null : byteEntries,
+      );
+      if (!mounted) return;
+      setState(() => _stagedPhotos.clear());
       await _load();
     } catch (e) {
       // ignore: avoid_print
@@ -365,11 +388,9 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
             children: [
               Text(l.vehicleStatusPhotos, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
               TextButton.icon(
-                onPressed: _uploading ? null : _addPhotos,
-                icon: _uploading
-                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.add_photo_alternate_outlined, size: 18),
-                label: Text(_uploading ? l.vehicleStatusUploading : l.vehicleStatusAddPhotos),
+                onPressed: _uploading ? null : _pickPhotos,
+                icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+                label: Text(l.vehicleStatusAddPhotos),
               ),
             ],
           ),
@@ -378,7 +399,72 @@ class _VehicleStatusScreenState extends State<VehicleStatusScreen> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(_uploadError!, style: const TextStyle(color: AppColors.danger, fontSize: 12.5)),
             ),
-          if (v.photoUrls.isEmpty)
+
+          // Staged photos preview + Send button
+          if (_stagedPhotos.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primary.withOpacity(.4)),
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('${_stagedPhotos.length} photo${_stagedPhotos.length > 1 ? 's' : ''} ready to send',
+                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 70,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _stagedPhotos.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, i) {
+                      final s = _stagedPhotos[i];
+                      return Stack(children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: (kIsWeb || s.path == null)
+                              ? Container(
+                                  width: 70, height: 70, color: AppColors.infoBg,
+                                  child: const Icon(Icons.image, color: AppColors.primary))
+                              : Image.file(File(s.path!), width: 70, height: 70, fit: BoxFit.cover),
+                        ),
+                        Positioned(
+                          right: 2, top: 2,
+                          child: GestureDetector(
+                            onTap: _uploading ? null : () => setState(() => _stagedPhotos.removeAt(i)),
+                            child: Container(
+                              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, size: 15, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ]);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _uploading ? null : _sendPhotos,
+                    icon: _uploading
+                        ? const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.send, size: 16),
+                    label: Text(_uploading ? 'Sending...' : 'Send photos'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          if (v.photoUrls.isEmpty && _stagedPhotos.isEmpty)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
