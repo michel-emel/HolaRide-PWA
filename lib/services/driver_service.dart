@@ -6,9 +6,10 @@ import 'api_client.dart';
 /// trip, see who's requesting seats on it, accept/reject those
 /// requests, and close the trip out.
 ///
-/// Price is never set by the driver here — the backend snapshots it at
-/// trip creation based on route and vehicle category, which is why
-/// [createTrip] takes a `vehicleId` instead of a price.
+/// Price defaults to the admin-set suggestion for the route + vehicle
+/// category, but the driver can adjust it at creation time (see
+/// [createTrip]'s `pricePerSeat`) — the backend re-validates and rounds
+/// whatever's sent, it's never trusted blindly from the client.
 ///
 /// Endpoint paths and HTTP methods confirmed against your backend's
 /// real OpenAPI schema. Several of my original guesses used POST where
@@ -34,6 +35,11 @@ class DriverService {
     required int departureMinute,
     required int availableSeats,
     required String vehicleId,
+    // Optional adjustment on top of the admin-suggested price for this
+    // route + vehicle category. Omit (or pass null) to use the admin
+    // price as-is. The backend re-validates and rounds this server-side
+    // regardless — this is a driver convenience, not the source of truth.
+    num? pricePerSeat,
   }) async {
     final dateStr = '${departureDate.year.toString().padLeft(4, '0')}-'
         '${departureDate.month.toString().padLeft(2, '0')}-'
@@ -47,6 +53,7 @@ class DriverService {
       'departure_date': dateStr,
       'departure_time': timeStr,
       'available_seats': availableSeats,
+      if (pricePerSeat != null) 'price_per_seat': pricePerSeat,
     });
     return Trip.fromJson(res as Map<String, dynamic>);
   }

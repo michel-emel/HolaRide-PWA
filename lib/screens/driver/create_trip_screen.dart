@@ -13,13 +13,20 @@ import 'my_trips_screen.dart';
 
 /// Screen 19 — Create a trip.
 ///
-/// Price per seat is never editable here — it's entirely admin-set,
-/// based on route and vehicle category, and the backend snapshots it
-/// at creation time. A live preview now shows as soon as both
-/// locations and the vehicle are known, via a `GET /trips/price-preview`
-/// endpoint added to the backend specifically for this — it reuses the
-/// exact same pricing lookup `createTrip` ends up using, so the preview
-/// can never drift out of sync with what publishing would actually charge.
+/// Price per seat defaults to the admin-suggested price for the route +
+/// vehicle category — fetched live via `GET /trips/price-preview` as
+/// soon as both locations and the vehicle are known (reusing the exact
+/// same pricing lookup `createTrip` ends up using server-side, so the
+/// suggestion can never drift out of sync with the admin default).
+///
+/// The driver can then adjust that suggestion for THIS trip only, in
+/// multiples of 500 XAF between 1500 and 10000 — via the −500/+500
+/// buttons or by typing a value directly (rounded up to the nearest 500
+/// on blur/publish, client-side, purely for feedback). The backend is
+/// the actual authority: it re-rounds and re-bounds whatever's sent and
+/// rejects anything invalid, so this screen's rounding is a convenience,
+/// never the source of truth. The admin's route pricing itself is never
+/// modified — only this one trip's snapshot.
 ///
 /// "From"/"To" pick a real [LocationResult] (with a real id) from
 /// `GET /locations/search`, not a free-text city string — the real
@@ -53,12 +60,83 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   bool _loadingPrice = false;
   String? _priceError;
 
+  // Driver's adjustment on top of the admin-suggested price, for THIS
+  // trip only. Pre-filled with the (rounded) admin suggestion as soon
+  // as it loads, and stays whatever's currently shown in the field —
+  // that's always what gets published. Only stays null if the price
+  // lookup never succeeded AND the driver never typed anything either,
+  // in which case nothing is sent and the backend falls back to the
+  // raw admin price, exactly like before this feature existed.
+  int? _selectedPrice;
+  String? _priceFieldError;
+  final _priceController = TextEditingController();
+  final _priceFocusNode = FocusNode();
+
+  static const int _minPrice = 1500;
+  static const int _maxPrice = 10000;
+  static const int _priceStep = 500;
+
   int get _maxSeats => _vehicle?.totalSeats ?? 8;
 
   @override
   void initState() {
     super.initState();
+    _priceFocusNode.addListener(() {
+      if (!_priceFocusNode.hasFocus) _commitTypedPrice(_priceController.text);
+    });
     _loadVehicle();
+  }
+
+  @override
+  void dispose() {
+    _priceController.dispose();
+    _priceFocusNode.dispose();
+    super.dispose();
+  }
+
+  int _roundUpToStep(num v) {
+    final rounded = (v / _priceStep).ceil() * _priceStep;
+    return rounded < 0 ? 0 : rounded;
+  }
+
+  void _adjustPrice(int delta) {
+    final base = _selectedPrice ?? _roundUpToStep(_pricePreview ?? _minPrice);
+    final next = (base + delta).clamp(_minPrice, _maxPrice);
+    setState(() {
+      _selectedPrice = next;
+      _priceFieldError = null;
+      _priceController.text = next.toString();
+    });
+  }
+
+  /// Commits whatever's currently typed in the price field: rounds up
+  /// to the nearest 500, then flags an error (without silently
+  /// substituting a different number) if that's still out of bounds —
+  /// mirrors the backend's own round-then-reject logic so the two never
+  /// disagree about what's valid. An empty field is left alone (no
+  /// error) — that only happens when the price lookup itself never
+  /// succeeded and the driver hasn't typed anything, in which case
+  /// publish just falls back to the admin price, same as today.
+  void _commitTypedPrice(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    final parsed = num.tryParse(trimmed);
+    if (parsed == null) {
+      setState(() => _priceFieldError = AppLocalizations.of(context).createTripPriceInvalid);
+      return;
+    }
+    final rounded = _roundUpToStep(parsed);
+    if (rounded < _minPrice || rounded > _maxPrice) {
+      setState(() {
+        _priceFieldError = AppLocalizations.of(context).createTripPriceOutOfRange;
+      });
+      return;
+    }
+    setState(() {
+      _selectedPrice = rounded;
+      _priceFieldError = null;
+      _priceController.text = rounded.toString();
+    });
   }
 
   Future<void> _loadVehicle() async {
@@ -81,11 +159,27 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     }
   }
 
+  /// Resets the driver's price adjustment back to the (rounded) admin
+  /// suggestion — called whenever the route changes and a fresh
+  /// suggestion comes in, since an adjustment made for a different
+  /// route doesn't mean anything here.
+  void _resetPriceAdjustment(num? suggested) {
+    _priceFieldError = null;
+    if (suggested == null) {
+      _selectedPrice = null;
+      _priceController.text = '';
+    } else {
+      _selectedPrice = _roundUpToStep(suggested).clamp(_minPrice, _maxPrice);
+      _priceController.text = _selectedPrice.toString();
+    }
+  }
+
   Future<void> _updatePricePreview() async {
     if (_from == null || _to == null || _vehicle == null) {
       setState(() {
         _pricePreview = null;
         _priceError = null;
+        _resetPriceAdjustment(null);
       });
       return;
     }
@@ -103,6 +197,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       setState(() {
         _pricePreview = price;
         _loadingPrice = false;
+        _resetPriceAdjustment(price);
       });
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -110,6 +205,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         _pricePreview = null;
         _priceError = e.message;
         _loadingPrice = false;
+        _resetPriceAdjustment(null);
       });
     } catch (e) {
       // ignore: avoid_print
@@ -119,6 +215,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         _pricePreview = null;
         _priceError = AppLocalizations.of(context).createTripNoPriceError;
         _loadingPrice = false;
+        _resetPriceAdjustment(null);
       });
     }
   }
@@ -141,16 +238,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       setState(() => _to = result);
       _updatePricePreview();
     }
-  }
-
-  String _money(num v) {
-    final s = v.toStringAsFixed(0);
-    final buf = StringBuffer();
-    for (int i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) buf.write(' ');
-      buf.write(s[i]);
-    }
-    return '$buf XAF';
   }
 
   Future<void> _pickDate() async {
@@ -184,6 +271,13 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       setState(() => _error = AppLocalizations.of(context).createTripNoVehicle);
       return;
     }
+    // Commit whatever's currently typed (in case the driver edited the
+    // field but never lost focus) before deciding what to publish with.
+    _commitTypedPrice(_priceController.text);
+    if (_priceFieldError != null) {
+      setState(() => _error = _priceFieldError);
+      return;
+    }
     setState(() {
       _submitting = true;
       _error = null;
@@ -197,6 +291,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         departureMinute: _time.minute,
         availableSeats: _seats,
         vehicleId: _vehicle!.id,
+        pricePerSeat: _selectedPrice,
       );
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
@@ -324,14 +419,19 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: AppColors.infoBg, borderRadius: BorderRadius.circular(12)),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.payments_outlined, color: AppColors.primary),
+                const Padding(
+                  padding: EdgeInsets.only(top: 2),
+                  child: Icon(Icons.payments_outlined, color: AppColors.primary),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(l.createTripPrice, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      const SizedBox(height: 6),
                       if (_loadingPrice)
                         const Padding(
                           padding: EdgeInsets.only(top: 2),
@@ -344,16 +444,57 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                       else if (_priceError != null)
                         Text(_priceError!,
                             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.danger))
-                      else if (_pricePreview != null)
-                        Text(
-                          _money(_pricePreview!),
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.primary),
-                        )
-                      else
+                      else if (_selectedPrice == null)
                         Text(
                           l.createTripPriceHint,
                           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary),
+                        )
+                      else
+                        Row(
+                          children: [
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: _selectedPrice! > _minPrice ? () => _adjustPrice(-_priceStep) : null,
+                              icon: const Icon(Icons.remove_circle_outline),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 96,
+                              child: TextField(
+                                controller: _priceController,
+                                focusNode: _priceFocusNode,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.primary),
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                                  border: OutlineInputBorder(),
+                                ),
+                                onChanged: (_) {
+                                  if (_priceFieldError != null) setState(() => _priceFieldError = null);
+                                },
+                                onSubmitted: _commitTypedPrice,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: _selectedPrice! < _maxPrice ? () => _adjustPrice(_priceStep) : null,
+                              icon: const Icon(Icons.add_circle_outline),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text('XAF', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
                         ),
+                      if (_priceFieldError != null) ...[
+                        const SizedBox(height: 4),
+                        Text(_priceFieldError!,
+                            style: const TextStyle(fontSize: 12, color: AppColors.danger)),
+                      ],
                     ],
                   ),
                 ),

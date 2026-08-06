@@ -1433,7 +1433,7 @@ abstract class AppLocalizations {
   /// No description provided for @createTripPriceNote.
   ///
   /// In en, this message translates to:
-  /// **'Set by HolaRide based on your route and vehicle category — drivers don\'t set prices.'**
+  /// **'Suggested by HolaRide based on your route and vehicle category — you can adjust it in steps of 500 XAF, between 1 500 and 10 000.'**
   String get createTripPriceNote;
 
   /// No description provided for @createTripPublish.
@@ -1465,6 +1465,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t load a price for this route.'**
   String get createTripNoPriceError;
+
+  /// No description provided for @createTripPriceInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount.'**
+  String get createTripPriceInvalid;
+
+  /// No description provided for @createTripPriceOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Price must be between 1 500 and 10 000 XAF.'**
+  String get createTripPriceOutOfRange;
 
   /// No description provided for @createTripPublishError.
   ///

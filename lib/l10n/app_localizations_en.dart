@@ -737,7 +737,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createTripPriceNote =>
-      'Set by HolaRide based on your route and vehicle category — drivers don\'t set prices.';
+      'Suggested by HolaRide based on your route and vehicle category — you can adjust it in steps of 500 XAF, between 1 500 and 10 000.';
 
   @override
   String get createTripPublish => 'Publish Trip';
@@ -755,6 +755,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createTripNoPriceError => 'Couldn\'t load a price for this route.';
+
+  @override
+  String get createTripPriceInvalid => 'Enter a valid amount.';
+
+  @override
+  String get createTripPriceOutOfRange =>
+      'Price must be between 1 500 and 10 000 XAF.';
 
   @override
   String get createTripPublishError =>
