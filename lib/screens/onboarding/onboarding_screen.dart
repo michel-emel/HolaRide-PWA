@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../l10n/app_localizations.dart';
-import '../splash_screen.dart';
+import '../main_tab_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -34,8 +34,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await prefs.setBool('onboarding_done', true);
     if (!mounted) return;
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    // Straight to Home, not Splash — onboarding already sold the pitch
+    // Splash repeats (logo, tagline, "Get Started"). Splash only makes
+    // sense again on a LATER cold start (see _AppEntry in main.dart),
+    // once onboarding_done is true and there's no fresh intro to skip.
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const SplashScreen()));
+      MaterialPageRoute(builder: (_) => const MainTabScreen()));
   }
 
   @override

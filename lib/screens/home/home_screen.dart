@@ -201,36 +201,52 @@ class _HomeScreenState extends State<HomeScreen> {
           color: AppColors.background,
           padding: EdgeInsets.fromLTRB(20, top + 12, 16, 12),
           child: Row(children: [
-            // Logo
-            RichText(text: const TextSpan(
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -.3),
-              children: [
-                TextSpan(text: 'Hola', style: TextStyle(color: AppColors.textPrimary)),
-                TextSpan(text: 'Ride', style: TextStyle(color: AppColors.primary)),
-              ],
-            )),
+            // Logo — Flexible so it ellipsizes instead of forcing an
+            // overflow on the narrowest devices; never actually shrinks
+            // in practice since it's short, but it's the safe default.
+            Flexible(
+              child: RichText(
+                overflow: TextOverflow.ellipsis,
+                text: const TextSpan(
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -.3),
+                  children: [
+                    TextSpan(text: 'Hola', style: TextStyle(color: AppColors.textPrimary)),
+                    TextSpan(text: 'Ride', style: TextStyle(color: AppColors.primary)),
+                  ],
+                ),
+              ),
+            ),
             const Spacer(),
-            // Language pill — shows flag + "English" + chevron
-            ValueListenableBuilder<Locale>(
-              valueListenable: localeNotifier,
-              builder: (_, locale, __) {
-                final isFr = locale.languageCode == 'fr';
-                return GestureDetector(
-                  onTap: () => LocaleService.setLocale(Locale(isFr ? 'en' : 'fr')),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.border)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text(isFr ? '🇫🇷' : '🇬🇧', style: const TextStyle(fontSize: 16)),
-                      const SizedBox(width: 6),
-                      Text(isFr ? 'Français' : 'English',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                    ])));
-              }),
-            const SizedBox(width: 10),
+            // Language pill — shows flag + "English"/"Français" + chevron.
+            // Wrapped in Flexible with an inner Flexible on the label so
+            // it shrinks/ellipsizes on narrow screens instead of pushing
+            // the row into overflow — this was the actual overflow bug.
+            Flexible(
+              child: ValueListenableBuilder<Locale>(
+                valueListenable: localeNotifier,
+                builder: (_, locale, __) {
+                  final isFr = locale.languageCode == 'fr';
+                  return GestureDetector(
+                    onTap: () => LocaleService.setLocale(Locale(isFr ? 'en' : 'fr')),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.border)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Text(isFr ? '🇫🇷' : '🇬🇧', style: const TextStyle(fontSize: 15)),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(isFr ? 'Français' : 'English',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                        ),
+                      ])));
+                }),
+            ),
+            const SizedBox(width: 8),
             if (_loggedIn) ...[
               const NotificationBell(),
               const SizedBox(width: 6),
@@ -266,8 +282,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // ── Available trips ──────────────────────────────────
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                const Text('Available trips',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+                const Flexible(
+                  child: Text('Available trips',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+                ),
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: _openSearch,
                   child: Container(
@@ -352,10 +373,16 @@ class _HomeScreenState extends State<HomeScreen> {
       Positioned(left: 16, top: 16, bottom: 16, width: 195, child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900,
-            color: Color(0xFF1B6B45), height: 1.15)),
-          const SizedBox(height: 8),
-          Text(sub, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.4)),
+          Text(title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900,
+              color: Color(0xFF1B6B45), height: 1.15)),
+          const SizedBox(height: 6),
+          Text(sub,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.35)),
           const Spacer(),
           // Smaller "Get Started" button
           SizedBox(
@@ -605,7 +632,7 @@ class _ActionCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: color.withOpacity(0.06),
           borderRadius: BorderRadius.circular(16),
@@ -618,32 +645,32 @@ class _ActionCard extends StatelessWidget {
             // Icon badge + arrow on one line — no dead vertical space
             Row(children: [
               Container(
-                width: 36, height: 36,
+                width: 32, height: 32,
                 decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                child: Icon(icon, color: Colors.white, size: 18),
+                child: Icon(icon, color: Colors.white, size: 16),
               ),
               const Spacer(),
               Container(
-                width: 26, height: 26,
+                width: 24, height: 24,
                 decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle,
                     border: Border.all(color: color.withOpacity(0.2))),
-                child: Icon(Icons.arrow_forward, size: 13, color: color),
+                child: Icon(Icons.arrow_forward, size: 12, color: color),
               ),
             ]),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 14.5)),
-            const SizedBox(height: 4),
+                style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 14)),
+            const SizedBox(height: 3),
             // Fixed 2-line zone so both cards always match in height,
             // even if one description wraps to a single line.
             SizedBox(
-              height: 34,
+              height: 32,
               child: Text(subtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.35)),
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5, height: 1.3)),
             ),
           ],
         ),
